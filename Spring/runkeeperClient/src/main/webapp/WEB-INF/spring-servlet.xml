@@ -55,7 +55,7 @@
 		scope="trust" />
 
 	
-	<context:property-placeholder location="classpath:/sparklr.properties" />
+	<context:property-placeholder location="classpath:/runkeeper.properties" />
 
 	<bean id="conversionService"
 		class="org.springframework.context.support.ConversionServiceFactoryBean">
@@ -114,7 +114,7 @@
 		<property name="sparklrTrustedMessageURL" value="${sparklrTrustedMessageURL}" />
 		<property name="sparklrPhotoURLPattern" value="${sparklrPhotoURLPattern}" />
 		<property name="sparklrRestTemplate">
-			<oauth:rest-template resource="sparklr" />
+			<oauth:rest-template resource="runkeeper" />
 		</property>
 		<property name="trustedClientRestTemplate">
 			<oauth:rest-template resource="trusted" />
@@ -126,7 +126,7 @@
 		<property name="sparklrPhotoListURL" value="${sparklrPhotoListURL}" />
 		<property name="sparklrPhotoURLPattern" value="${sparklrPhotoURLPattern}" />
 		<property name="sparklrRestTemplate">
-			<oauth:rest-template resource="sparklrRedirect" />
+			<oauth:rest-template resource="runkeeperRedirect" />
 		</property>
 	</bean>
 
