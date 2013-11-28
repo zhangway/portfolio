@@ -1,5 +1,6 @@
 package no.uit.zhangway;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,96 +27,104 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.google.gson.Gson;
 
-
-
-
-
-
 @Controller
 public class RunkeeperController {
-	
+
 	private Client client;
-	
+
 	@RequestMapping(value = "/runkeeper", method = RequestMethod.GET)
 	public String runkeeper(Model model) {
-		
-		model.addAttribute("client_id", "d2831aa1942f4f33ae2ce5dcb86d7e91" );
-		model.addAttribute("response_type", "code" );
-		model.addAttribute("redirect_uri", "http://localhost:8080/zhangway/index.htm" );
+
+		model.addAttribute("client_id", "d2831aa1942f4f33ae2ce5dcb86d7e91");
+		model.addAttribute("response_type", "code");
+		model.addAttribute("redirect_uri",
+				"http://localhost:8080/zhangway/index.htm");
 		return "redirect:https://runkeeper.com/apps/authorize";
 	}
-	
+
 	@RequestMapping(value = "/index", method = RequestMethod.GET)
-	public String index(@RequestParam("code") String code,Model model){
-		
+	public String index(@RequestParam("code") String code, Model model) {
+
 		System.out.println("code: " + code);
-		
+
 		return "index";
 	}
-	
+
 	@RequestMapping(value = "/gettoken", method = RequestMethod.POST)
-	public String retrieve(@RequestParam("code") String code,Model model){
-		
-		
+	public String retrieve(@RequestParam("code") String code, Model model) {
+
 		System.out.println("retrieve code: " + code);
-		String token = convertToken(code, "d2831aa1942f4f33ae2ce5dcb86d7e91", "ec171aefb9b0406187c211c48138f24f", "http://localhost:8080/zhangway/index.htm");
+		String token = convertToken(code, "d2831aa1942f4f33ae2ce5dcb86d7e91",
+				"ec171aefb9b0406187c211c48138f24f",
+				"http://localhost:8080/zhangway/index.htm");
 		System.out.println("token: " + token);
 		client = new Client(token);
-		
-		
-		client.createFitnessActivity();
-		String[] list = {"270357490","270357508","270357533","270357550","270357565",
-						 "270357590","270357604","270357626","270357647","270357666",
-						 "270357701","270357714","270357734","270357755","270357772",
-						 "270357785","270357800","270357822","270357839","270357853"};
-		String resource = "/fitnessActivities/";
-		FitnessActivity fitnessActivity2 = client.getFitnessActivity(resource+"271160045");	
-		for(int j = 0; j<20; j++){
+		String filename;
+		for (int k = 4; k <= 4; k += 1) {
 			
-			FitnessActivity fitnessActivity3 = client.getFitnessActivity(resource+list[j]);	
 			
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
+			filename = "C:/Users/zw/spring/bbb/60000.json";
+    		
+    		try {
+				client.createFitnessActivity(filename);
+			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			
+			//String resource = "/fitnessActivities/";
+			FitnessActivity fitnessActivity2 = client
+					.getFitnessActivity(client.getLocation());
+			
+			
 		}
-		
+		/*
+		 * for(int j = 0; j<20; j++){
+		 * 
+		 * FitnessActivity fitnessActivity3 =
+		 * client.getFitnessActivity(resource+list[j]);
+		 * 
+		 * try { Thread.sleep(2000); } catch (InterruptedException e) { // TODO
+		 * Auto-generated catch block e.printStackTrace(); } }
+		 */
 		FitnessActivityFeed fitnessActivities = client.getFitnessActivities();
-        for (FitnessActivityFeedItem feed : fitnessActivities.getItems()) {
-            FitnessActivity fitnessActivity = client.getFitnessActivity(feed.getUri());
-            //assertObjectEqualsExpectedJson(fitnessActivity, "responses" + feed.getUri() + ".json");
-            
-        }
-		
+		for (FitnessActivityFeedItem feed : fitnessActivities.getItems()) {
+			FitnessActivity fitnessActivity = client.getFitnessActivity(feed
+					.getUri());
+			// assertObjectEqualsExpectedJson(fitnessActivity, "responses" +
+			// feed.getUri() + ".json");
+
+		}
+
 		return "index";
 	}
-	
-	
-	
-	private String convertToken(String code, String clientId, String clientSecret, String redirectUri) {
-        HttpClient client = new DefaultHttpClient();
 
-        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-        nameValuePairs.add(new BasicNameValuePair("grant_type", "authorization_code"));
-        nameValuePairs.add(new BasicNameValuePair("code", code));
-        nameValuePairs.add(new BasicNameValuePair("client_id", clientId));
-        nameValuePairs.add(new BasicNameValuePair("client_secret", clientSecret));
-        nameValuePairs.add(new BasicNameValuePair("redirect_uri", redirectUri));
+	private String convertToken(String code, String clientId,
+			String clientSecret, String redirectUri) {
+		HttpClient client = new DefaultHttpClient();
 
-        try {
-            HttpPost post = new HttpPost("https://runkeeper.com/apps/token");
-            post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-            HttpResponse response = client.execute(post);
-            HttpEntity entity = response.getEntity();
-            String entityAsString = EntityUtils.toString(entity);
-            Map<String, String> map = new HashMap<String, String>();
-            map = (Map<String, String>) new Gson().fromJson(entityAsString, map.getClass());
-            return map.get("access_token");
-        } catch (Exception e) {
-            throw new ClientException(e);
-        }
-    }
+		List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
+		nameValuePairs.add(new BasicNameValuePair("grant_type",
+				"authorization_code"));
+		nameValuePairs.add(new BasicNameValuePair("code", code));
+		nameValuePairs.add(new BasicNameValuePair("client_id", clientId));
+		nameValuePairs
+				.add(new BasicNameValuePair("client_secret", clientSecret));
+		nameValuePairs.add(new BasicNameValuePair("redirect_uri", redirectUri));
+
+		try {
+			HttpPost post = new HttpPost("https://runkeeper.com/apps/token");
+			post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+			HttpResponse response = client.execute(post);
+			HttpEntity entity = response.getEntity();
+			String entityAsString = EntityUtils.toString(entity);
+			Map<String, String> map = new HashMap<String, String>();
+			map = (Map<String, String>) new Gson().fromJson(entityAsString,
+					map.getClass());
+			return map.get("access_token");
+		} catch (Exception e) {
+			throw new ClientException(e);
+		}
+	}
 
 }

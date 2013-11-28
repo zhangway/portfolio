@@ -1,10 +1,14 @@
 package no.uit.zhangway;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.SocketTimeoutException;
+import java.util.zip.GZIPOutputStream;
 
 import no.uit.zhangway.model.FitnessActivity;
 import no.uit.zhangway.model.FitnessActivityFeed;
@@ -13,18 +17,22 @@ import no.uit.zhangway.model.User;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.ByteArrayBody;
+import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
 import com.google.gson.Gson;
@@ -36,15 +44,39 @@ public class Client {
     public static final String FITNESS_ACTIVITIES = "/fitnessActivities";
     
 
-    private final HttpClient httpClient;
+    private final CloseableHttpClient httpClient;
     private final String accessToken;
     private final String url;
     private final Gson gson;
-
+    private String location;
     private User user;
+    private long start;
+    private long end;
+    
+    public long getStart() {
+		return start;
+	}
+
+	public void setStart(long start) {
+		this.start = start;
+	}
+
+	public long getEnd() {
+		return end;
+	}
+
+	public void setEnd(long end) {
+		this.end = end;
+	}
+
+	
 
     public Client(String accessToken) {
         this(PRODUCTION_URL, accessToken);
+    }
+    
+    public String getLocation(){
+    	return this.location;
     }
 
     public Client(String url, String accessToken) {
@@ -60,16 +92,49 @@ public class Client {
         params.setSoTimeout(5000);
         client = new HttpClient(params, manager);
         */
+        /*
         final HttpParams httpParams = new BasicHttpParams();
         HttpConnectionParams.setConnectionTimeout(httpParams, 3000000);
         HttpConnectionParams.setSoTimeout(httpParams,3000000);
         httpClient = new DefaultHttpClient(httpParams);
         httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 30000);
         httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, 60000);
+        */
+        //httpClient = HttpClients.createDefault();
         
-        CloseableHttpClient httpclient = HttpClients.createDefault();
+        RequestConfig defaultRequestConfig = RequestConfig.custom()        		
+        	    .setSocketTimeout(3000000)
+        	    .setConnectTimeout(3000000)
+        	    .setConnectionRequestTimeout(3000000)  
+        	    .setStaleConnectionCheckEnabled(true)
+        	    .build();
+        ConnectionKeepAliveStrategy keepAliveStrat = new DefaultConnectionKeepAliveStrategy() {
+
+            @Override
+            public long getKeepAliveDuration(
+                    HttpResponse response,
+                    HttpContext context) {
+                long keepAlive = super.getKeepAliveDuration(response, context);
+                if (keepAlive == -1) {
+                    // Keep connections alive 5 seconds if a keep-alive value
+                    // has not be explicitly set by the server
+                    keepAlive = 1800000;
+                }
+                return keepAlive;
+            }
+
+        };
+        /*
+        CloseableHttpClient httpclient = HttpClients.custom()
+                .setKeepAliveStrategy(keepAliveStrat)
+                .build();
+        */
+        httpClient = HttpClients.custom()
+        	    .setDefaultRequestConfig(defaultRequestConfig)  
+        	    .setKeepAliveStrategy(keepAliveStrat)
+        	    .build();
         
-        
+                
         gson = new Gson();
         user = getUser();
     }
@@ -96,7 +161,9 @@ public class Client {
         HttpPost post = new HttpPost(fullUrl);
         post.addHeader("Content-Type", contentType);
         post.addHeader("Authorization", "Bearer " + accessToken);
-        
+        //post.addHeader("Content-Encoding", "gzip");
+        post.setHeader("Connection", "keep-alive");
+
         return post;
     }
     
@@ -116,17 +183,24 @@ public class Client {
     public void createFitnessActivity(){
     	String filename = null;
     	
-    	for(int i = 20000; i <= 300000; i+=20000){
+    	for(int i = 5000; i <= 40000; i+=5000){
     		filename = "C:/Users/zw/spring/bbb/"+i+".json";
     		//filename = "C:/Users/zw/Downloads/"+i+"_points.json";
-    		createFitnessActivity(filename);
+    		try {
+				createFitnessActivity(filename);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
     	}
     	
     }
     
-    public void createFitnessActivity(String filename){
+    public void createFitnessActivity(String filename) throws IOException{
     	
     	HttpPost post = createHttpPostRequest(FITNESS_ACTIVITIES, ContentTypes.NEW_FITNESS_ACTIVITY);
+    	
+    	
     	StringBuffer sb = new StringBuffer();
 		String line;
 		BufferedReader br = null;
@@ -143,6 +217,7 @@ public class Client {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
 		//String json = sb.toString();
     	StringEntity input = null;
     	//System.out.println(sb.toString());
@@ -155,10 +230,75 @@ public class Client {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}		
-		
 		post.setEntity(input);
     	//execute_post(post, clazz, callback)
+		/*
+    	String foo = sb.toString();
+    	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	GZIPOutputStream gzos = null;
+
+    	try {
+    	    gzos = new GZIPOutputStream(baos);
+    	    gzos.write(foo.getBytes("UTF-8"));
+    	} finally {
+    	    if (gzos != null) try { gzos.close(); } catch (IOException ignore) {};
+    	}
+    	System.out.printf("Compression ratio %f\n", (1.0f * foo.length()/baos.size()));
+    	byte[] fooGzippedBytes = baos.toByteArray();
+    	HttpEntity multipartEntity = MultipartEntityBuilder.create()
+				.addBinaryBody("foo", fooGzippedBytes)
+				.build();
+    	/*
+    	MultipartEntity entity = new MultipartEntity();
+    	entity.addPart("foo", new InputStreamBody(new ByteArrayInputStream(fooGzippedBytes), "foo.txt"));
+
+    	entity.addPart("foo", new ByteArrayBody(fooGzippedBytes, "foo.txt"));
+    	*/
+    	//post.setEntity(multipartEntity);
+    	
 		CloseableHttpResponse  response = null;
+		Long startTime = null;
+		try {
+			startTime = System.currentTimeMillis();
+			this.start = startTime;
+			response = (CloseableHttpResponse) httpClient.execute(post);
+		} catch (SocketTimeoutException se) {
+			Long endTime = System.currentTimeMillis();
+			System.out.println("SocketTimeoutException :: time elapsed :: "
+					+ (endTime - startTime));
+			se.printStackTrace();
+		} catch (ConnectTimeoutException cte) {
+			Long endTime = System.currentTimeMillis();
+			System.out.println("ConnectTimeoutException :: time elapsed :: "
+					+ (endTime - startTime));
+			cte.printStackTrace();
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			Long endTime = System.currentTimeMillis();
+			System.out.println("IOException :: time elapsed :: "
+					+ (endTime - startTime));
+			e.printStackTrace();
+		}
+		long t=System.currentTimeMillis()-startTime;
+		int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode == HttpStatus.SC_CREATED) {            
+        	this.location = response.getFirstHeader("Location").getValue();
+        	
+        	System.out.println("latency:"+t+",filename:"+filename+",Location:"+this.location);
+        	HttpEntity entity = response.getEntity();
+            if (entity != null){
+            	try {
+					EntityUtils.consume(entity);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+        } else {
+            throw new ClientException("Unexpected statusCode " + statusCode);
+        }
+		/*
     	try {
     		//long start = System.nanoTime();
     		long t1=System.currentTimeMillis(); 
@@ -168,22 +308,13 @@ public class Client {
             //System.out.println("latency:"+t);
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == HttpStatus.SC_CREATED) {
-                //String entity = EntityUtils.toString(response.getEntity());
-            	//get all headers
-            	/*
-            	Header[] headers = response.getAllHeaders();
-            	for (Header header : headers) {
-            		System.out.println("Key : " + header.getName() 
-            		      + " ,Value : " + header.getValue());
-            	}
-                */
-            	//get header by 'key'
+
             	String location = response.getFirstHeader("Location").getValue();
             	System.out.println("latency:"+t+",filename:"+filename+",Location:"+location);
             	HttpEntity entity = response.getEntity();
                 if (entity != null){
                 	EntityUtils.consume(entity);
-                }/*
+                }
                 HttpEntity entity = response.getEntity();
                 String entityAsString = EntityUtils.toString(entity);
                 Map<String, String> map = new HashMap<String, String>();
@@ -197,13 +328,14 @@ public class Client {
                     callback.success(parsedObject, entity);
                 }
                 return parsedObject;
-                */
+                
             } else {
                 throw new ClientException("Unexpected statusCode " + statusCode);
             }
         } catch (IOException e) {
             throw new ClientException(e);
         } 
+        */
     	
     }
 
@@ -232,9 +364,13 @@ public class Client {
             
             HttpResponse response = httpClient.execute(get);
             long t=System.currentTimeMillis()-t1; 
-            System.out.println("Latency:"+t);
+            System.out.println("Get Latency:"+t);
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == HttpStatus.SC_OK) {
+            	if(this.start!=0){
+            		this.end = System.currentTimeMillis()-this.start;
+            		System.out.println("end to end time: " + this.end);
+            	}
                 String entity = EntityUtils.toString(response.getEntity());
                 T parsedObject = gson.fromJson(entity, clazz);
                 if (callback != null) {
