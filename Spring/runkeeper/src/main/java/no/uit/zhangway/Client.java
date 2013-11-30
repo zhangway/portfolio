@@ -1,14 +1,13 @@
 package no.uit.zhangway;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.SocketTimeoutException;
-import java.util.zip.GZIPOutputStream;
 
 import no.uit.zhangway.model.FitnessActivity;
 import no.uit.zhangway.model.FitnessActivityFeed;
@@ -24,11 +23,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.ByteArrayBody;
-import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.HttpClients;
@@ -199,8 +195,21 @@ public class Client {
     public void createFitnessActivity(String filename) throws IOException{
     	
     	HttpPost post = createHttpPostRequest(FITNESS_ACTIVITIES, ContentTypes.NEW_FITNESS_ACTIVITY);
-    	
-    	
+    	File file = new File("C:/Users/zw/spring/bbb/60000.json");
+    	InputStreamEntity reqEntity = new InputStreamEntity(
+                new FileInputStream(file), -1);
+        reqEntity.setContentType("binary/octet-stream");
+        reqEntity.setChunked(true);
+        // It may be more appropriate to use FileEntity class in this particular
+        // instance but we are using a more generic InputStreamEntity to demonstrate
+        // the capability to stream out data from any arbitrary source
+        //
+        // FileEntity entity = new FileEntity(file, "binary/octet-stream");
+
+        post.setEntity(reqEntity);
+
+        System.out.println("executing request " + post.getRequestLine());
+    	/*
     	StringBuffer sb = new StringBuffer();
 		String line;
 		BufferedReader br = null;
