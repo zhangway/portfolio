@@ -31,6 +31,7 @@ import com.google.gson.Gson;
 public class RunkeeperController {
 
 	private Client client;
+	private String token;
 
 	@RequestMapping(value = "/runkeeper", method = RequestMethod.GET)
 	public String runkeeper(Model model) {
@@ -38,27 +39,30 @@ public class RunkeeperController {
 		model.addAttribute("client_id", "d2831aa1942f4f33ae2ce5dcb86d7e91");
 		model.addAttribute("response_type", "code");
 		model.addAttribute("redirect_uri",
-				"http://localhost:8080/zhangway/index.htm");
+				"http://localhost:8080/zhangway/main.htm");
 		return "redirect:https://runkeeper.com/apps/authorize";
 	}
 
-	@RequestMapping(value = "/index", method = RequestMethod.GET)
+	@RequestMapping(value = "/main", method = RequestMethod.GET)
 	public String index(@RequestParam("code") String code, Model model) {
 
 		System.out.println("code: " + code);
+		
+		String token = convertToken(code, "d2831aa1942f4f33ae2ce5dcb86d7e91",
+				"ec171aefb9b0406187c211c48138f24f",
+				"http://localhost:8080/zhangway/main.htm");
+		System.out.println("token: " + token);
+		this.token = token;
 
-		return "index";
+		return "main";
 	}
 
 	@RequestMapping(value = "/gettoken", method = RequestMethod.POST)
 	public String retrieve(@RequestParam("code") String code, Model model) {
 
 		System.out.println("retrieve code: " + code);
-		String token = convertToken(code, "d2831aa1942f4f33ae2ce5dcb86d7e91",
-				"ec171aefb9b0406187c211c48138f24f",
-				"http://localhost:8080/zhangway/index.htm");
-		System.out.println("token: " + token);
-		client = new Client(token);
+		
+		client = new Client(this.token);
 		String filename;
 		for (int k = 4; k <= 4; k += 1) {
 			
