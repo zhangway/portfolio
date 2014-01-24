@@ -35,6 +35,11 @@
 		<servlet-name>appServlet</servlet-name>
 		<url-pattern>/</url-pattern>
 	</servlet-mapping>
+	<servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.jpg</url-pattern>
+    <url-pattern>*.png</url-pattern>
+</servlet-mapping>
 	
 	<!-- Spring Security -->
 	<filter>

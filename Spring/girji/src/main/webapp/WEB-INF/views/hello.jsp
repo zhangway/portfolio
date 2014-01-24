@@ -7,5 +7,14 @@
 	<p>
 	<a href="<c:url value="/runkeeper"/>">Connect to RunKeeper</a>
 	</p>
+	<p>
+	<a href="<c:url value="/mycapabilities"/>">My Capabilities</a>
+	</p>
+	<p>
+	<a href="<c:url value="/execute"/>">Execute</a>
+	</p>
+	<p>
+	<a href="<c:url value="/test"/>">test</a>
+	</p>
 </body>
 </html>
