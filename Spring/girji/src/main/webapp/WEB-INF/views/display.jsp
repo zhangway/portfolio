@@ -5,7 +5,7 @@
 	<title>Test Result</title>
 </head>
 <body>
-<img src="${pageContext.request.contextPath}/resources/images/c.png"/>
+<img src="${pageContext.request.contextPath}/resources/images/girji.jpg"/>
 
 </body>
 </html>

@@ -2,6 +2,7 @@ package no.uit.zhangwei;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,6 +19,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
 
 @Controller
 
@@ -48,6 +56,34 @@ public class HelloController {
 	
 	@RequestMapping(value = "/test", method = RequestMethod.GET)
 	public String test(ModelMap model, Principal principal)  {
+		
+		JSch jsch = new JSch();
+		Session session = null;
+
+		try {
+		session = jsch.getSession("wei", "129.242.19.118", 22);
+
+		session.setConfig("StrictHostKeyChecking", "no");
+
+		session.setPassword("591102Zw");
+
+		session.connect();
+
+		Channel channel = session.openChannel("sftp");
+		channel.connect();
+		ChannelSftp sftpChannel = (ChannelSftp) channel;
+
+		File file = new File("c:\\Users\\zw\\spring\\girji\\test.R");
+		sftpChannel.put(new FileInputStream(file),"./upload/helloo.R");
+		sftpChannel.exit();
+		session.disconnect();
+		}catch(JSchException e){
+			e.printStackTrace();
+		}catch(SftpException e){
+			e.printStackTrace();
+		}catch(FileNotFoundException e){
+			e.printStackTrace();
+		}
  
 		/*
 		

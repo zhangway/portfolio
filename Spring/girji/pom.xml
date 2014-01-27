@@ -176,6 +176,13 @@
 			<artifactId>Rserve</artifactId>
 			<version>0.6-8.1</version>
 		</dependency>
+		<!-- SFTP client java library -->
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.50</version>
+		</dependency>
+
 
 
 		<!-- added end -->

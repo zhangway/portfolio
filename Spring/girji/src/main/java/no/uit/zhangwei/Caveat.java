@@ -1,11 +1,14 @@
 package no.uit.zhangwei;
 
-public class Caveat {
+import java.io.Serializable;
+
+public class Caveat implements Serializable{
 	
-	
+	private String id;
 	private Object input;
 	private String codeRef;
 	private Object output;
+	private String operation;
 	private String predicate;
 	
 	public Caveat(Object input, String codeRef, String predicate){
@@ -13,16 +16,48 @@ public class Caveat {
 		this.codeRef = codeRef;
 		this.predicate = predicate;
 	}
-	 
 	
-	public Caveat() {
-		// TODO Auto-generated constructor stub
+	public Caveat(){
+		
+	}
+	
+	public Caveat(Object input, String codeRef, Object output, String operation, String predicate) {
+		
+		this.input = input;
+		this.codeRef = codeRef;
+		this.output = output;
+		this.operation = operation;
+		this.predicate = predicate;
+	
 	}
 
 	public String toString(){
-		return (input.toString()+codeRef.toString()+output.toString()+predicate.toString());
+		String str = "";
+		if(this.input != null){
+			str = str + this.input.toString();
+		}
+		if(this.codeRef != null){
+			str = str + this.codeRef;
+		}
+		if(this.output != null){
+			str = str + this.output;
+		}
+		if(this.operation != null){
+			str = str + this.operation;
+		}
+		if(this.predicate != null){
+			str = str + this.predicate;
+		}
+		
+		return str;
 	}
 
+	public Object getOperation() {
+		return operation;
+	}
+	public void setOperation(String operation) {
+		this.operation = operation;
+	}
 	public Object getInput() {
 		return input;
 	}

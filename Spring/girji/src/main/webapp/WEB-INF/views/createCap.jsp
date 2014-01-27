@@ -7,6 +7,7 @@
 <title>Create A Capability</title>  
 </head> 
 <body>
+<h1>${message} cratea a cap</h1>
 <!--  
 	<form:form method="post" enctype="multipart/form-data"  
    modelAttribute="uploadedFile" action="fileUpload.htm">  
