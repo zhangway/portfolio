@@ -44,15 +44,7 @@ public class HelloController {
  
 	}
 	
-	@RequestMapping(value = "/mycapabilities", method = RequestMethod.GET)
-	public String myCapabilities(ModelMap model, Principal principal) {
- 
-		String name = principal.getName(); //get logged in username
-		String message = name + "'s Capabilities:";
-		model.addAttribute("message", message);
-		return "capabilities";
- 
-	}
+	
 	
 	@RequestMapping(value = "/test", method = RequestMethod.GET)
 	public String test(ModelMap model, Principal principal)  {

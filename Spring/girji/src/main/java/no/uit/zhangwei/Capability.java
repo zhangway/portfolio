@@ -12,9 +12,12 @@ import java.util.Date;
 public class Capability implements Serializable{
 
 	
-	private String nonce;
+	private String name;
 	private ArrayList<Caveat> caveats;
+	private String description;
 	private String signature;
+
+
 
 
 
@@ -22,9 +25,7 @@ public class Capability implements Serializable{
 			Boolean allowDelegation) throws InvalidKeyException,
 			SignatureException, NoSuchAlgorithmException {
 
-		Date today = new Date();
-		Format formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-		this.nonce = formatter.format(today);
+		
 		String sigRoot = null;
 
 		this.caveats = new ArrayList<Caveat>();
@@ -59,9 +60,27 @@ public class Capability implements Serializable{
 		
 
 	}
+	
+	public String toString(){
+		
+		return this.name+this.signature;
+		
+	}
+	
+	public String getName() {
+		return name;
+	}
 
-	public String getNonce() {
-		return this.nonce;
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	public ArrayList<Caveat> getCaveats() {

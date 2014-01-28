@@ -1,12 +1,20 @@
 package no.uit.zhangwei;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.security.Principal;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import no.uit.zhangwei.Model.runkeeper.FitnessActivity;
 import no.uit.zhangwei.Model.runkeeper.FitnessActivityFeed;
 import no.uit.zhangwei.Model.runkeeper.FitnessActivityFeedItem;
 import no.uit.zhangwei.runkeeper.ClientException;
@@ -27,6 +35,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.google.gson.Gson;
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
 
 @Controller
 public class RunKeeperController {
@@ -52,7 +66,7 @@ public class RunKeeperController {
 	}
 
 	@RequestMapping(value = "/gettoken", method = RequestMethod.POST)
-	public String retrieve(@RequestParam("code") String code, Model model) {
+	public String retrieve(@RequestParam("code") String code, Model model, Principal principal) {
 
 		System.out.println("retrieve code: " + code);
 		String token = convertToken(code, "d2831aa1942f4f33ae2ce5dcb86d7e91",
@@ -64,7 +78,7 @@ public class RunKeeperController {
 		FitnessActivityFeed fitnessActivities = client.getFitnessActivities();
 		FitnessActivityFeedItem[] feedItems = fitnessActivities.getItems();
 		
-		/*
+		
 		ArrayList<FitnessActivityFeedItemView> feedItemsView = new ArrayList<FitnessActivityFeedItemView>();
 		BigDecimal thousandths = new BigDecimal(1000);
 		long value = 0;
@@ -83,8 +97,83 @@ public class RunKeeperController {
 		}
 		
 		model.addAttribute("feedItemsView", feedItemsView);
-		*/
+		String name = principal.getName(); // get logged in username
+		FileWriter writer = null;
+		FitnessActivityFeedItemView f = null;
+		try {
+			writer = new FileWriter("c:\\users\\zhangwei\\spring\\girji\\" + name + ".csv");
+			writer.append("Date");
+		    writer.append(';');
+		    writer.append("Type");
+		    writer.append(';');
+		    writer.append("Distance");
+		    writer.append(';');
+		    writer.append("Duration");
+		    writer.append(';');
+		    writer.append("Calories");
+		    writer.append('\n');
+		    for(int j = 0; j < feedItemsView.size(); j++){
+		    	f = feedItemsView.get(j);
+		    	String time = f.getStartTime().split(",")[1].trim();
+		    	writer.append(time);
+			    writer.append(';');
+			    writer.append(f.getType());
+			    writer.append(';');
+			    writer.append(f.getTotalDistance());
+			    writer.append(';');
+			    writer.append(f.getDuration());
+			    writer.append(';');
+			    writer.append(f.getTotalCalories());
+			    writer.append('\n');
+		    }
+		    writer.flush();
+		    writer.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		 
+		JSch jsch = new JSch();
+		Session session = null;
+		String time = null;
+		String fullName = null;
+
+		try {
+			session = jsch.getSession("wei", "129.242.19.118", 22);
+
+			session.setConfig("StrictHostKeyChecking", "no");
+
+			session.setPassword("591102Zw");
+
+			session.connect();
+
+			Channel channel = session.openChannel("sftp");
+			channel.connect();
+			ChannelSftp sftpChannel = (ChannelSftp) channel;
+
+			Date today = new Date();
+			Format formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+			time = formatter.format(today);
+			fullName = "./upload/" + name + ".csv";
+			//File file = new File("c:\\users\\zhangwei\\spring\\girji\\" + name + ".csv");
+			
+			// File file = new File("c:\\Users\\zw\\spring\\girji\\test.R");
+			sftpChannel.put(new FileInputStream("c:\\users\\zhangwei\\spring\\girji\\" + name + ".csv"), fullName);
+
+			sftpChannel.exit();
+			session.disconnect();
+		} catch (JSchException e) {
+			e.printStackTrace();
+		} catch (SftpException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
+		/*
 		for (FitnessActivityFeedItem feed : fitnessActivities.getItems()) {
 			
 			FitnessActivity fitnessActivity = client.getFitnessActivity(feed.getUri());
@@ -92,7 +181,7 @@ public class RunKeeperController {
 			// feed.getUri() + ".json");
 
 		}
-		
+		*/
 			
 
 		return "rk";

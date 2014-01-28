@@ -10,6 +10,7 @@
 </h1>
 
 <P>  The time on the server is ${serverTime}. </P>
-<img src="${pageContext.request.contextPath}/resources/images/c.jpg"/>
+<img src="${pageContext.request.contextPath}/resources/images/f.jpg"/>
+
 </body>
 </html>
