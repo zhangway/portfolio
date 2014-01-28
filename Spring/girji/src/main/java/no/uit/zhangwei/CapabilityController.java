@@ -1,10 +1,6 @@
 package no.uit.zhangwei;
 
-import java.awt.Image;
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,8 +9,6 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
@@ -23,11 +17,10 @@ import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 
 import javax.servlet.ServletContext;
 
-import org.apache.commons.codec.language.Caverphone2;
+import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.REXPRaw;
 import org.rosuda.REngine.REngineException;
@@ -46,7 +39,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
@@ -69,167 +61,260 @@ public class CapabilityController {
 		return "createCap";
 
 	}
-	
+
 	@RequestMapping(value = "/mycapabilities", method = RequestMethod.GET)
 	public String myCapabilities(ModelMap model, Principal principal) {
- 
-		String name = principal.getName(); //get logged in username
+
+		String name = principal.getName(); // get logged in username
 		String message = name + "'s Capabilities:";
 		model.addAttribute("capabilities", this.capabilities);
 		return "capabilities";
- 
+
 	}
 
-	/*
-	 * @RequestMapping(value = "/create_capability", method = RequestMethod.GET)
-	 * public String createCapability(ModelMap model, Principal principal) {
-	 * 
-	 * String name = principal.getName(); // get logged in username Capability
-	 * cap = null; try { cap = new Capability(null, "./upload/girji.R",
-	 * "8:00-12:00", false); } catch (InvalidKeyException e) { // TODO
-	 * Auto-generated catch block e.printStackTrace(); } catch
-	 * (SignatureException e) { // TODO Auto-generated catch block
-	 * e.printStackTrace(); } catch (NoSuchAlgorithmException e) { // TODO
-	 * Auto-generated catch block e.printStackTrace(); } try {
-	 * 
-	 * FileOutputStream fout = new FileOutputStream(
-	 * "c:\\users\\zw\\spring\\girji\\capability.ser"); ObjectOutputStream oos =
-	 * new ObjectOutputStream(fout); oos.writeObject(cap); oos.close();
-	 * System.out.println("Done");
-	 * 
-	 * } catch (Exception ex) { ex.printStackTrace(); } // String message = name
-	 * + "'s Capabilities:"; model.addAttribute("name", name);
-	 * 
-	 * return "createCap";
-	 * 
-	 * }
-	 */
+	@RequestMapping(value = "/test", method = RequestMethod.GET)
+	public ResponseEntity<byte[]> test(ModelMap model, Principal principal) throws REXPMismatchException {
+
+		RConnection c = null;
+		REXPRaw b = null;
+		String RCodePath = null;
+
+		try {
+			c = new RConnection("129.242.19.118");
+		} catch (RserveException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		RCodePath = "/home/wei/upload/f.R";
+		System.out.println("RCodePath: " + RCodePath);
+		RList r = null;
+		String device = "jpeg";
+		REXP x = null;
+		REXP xp = null;
+		String myCode = null;
+		
+		myCode = "df <- read.csv('/home/wei/upload/zw.csv', sep=';', header=TRUE);jpeg('/home/wei/upload/hello.jpg');"
+				+ "bp <- barplot(df$Distance, main='Distance Plot', xlab='Month', ylab='Distance',ylim=c(0,70),names.arg=df$Date);"
+				+ "text(bp, df$Distance, labels =df$Distance,  pos=3);"
+				+ "dev.off(); r=readBin('/home/wei/upload/hello.jpg','raw',1024*1024); unlink('/home/wei/upload/hello.jpg'); r";
+		myCode = "R.version.string";
+		myCode = "library(lubridate);" + 
+				 "df <- read.csv('/home/wei/upload/zhangwei.csv', sep=';', header=TRUE);" +
+				 "timeSeriesDatesZ <- as.POSIXct(df$Date, format = '%Y:%j:%H:%M:%S');" + 
+				 "date <- dmy_hms(df$Date); " + 
+				 "year <- year(date);" + 
+				 "month <- month(date, label=FALSE);" + 
+				 "strMonth <- sprintf('%02d', month);" +
+				 "strYear <- sprintf('%d', year);" +
+				 "yearmon <- paste(strYear,strMonth, sep='');" + 
+				 "df$Date <- as.integer(yearmon); " + 
+				 "data <- aggregate(Distance ~ Date, df, function(x) sum=sum(x)); " +
+				 "data <- data[order(data$Date),]; " +
+				 "jpeg('/home/wei/upload/hello.jpg'); " +
+				 "bp <- barplot(data$Distance, main='Distance Plot', xlab='Month', ylab='Distance',ylim=c(0,70),names.arg=data$Date);" +
+				 "text(bp, data$Distance, labels =data$Distance,  pos=3); " +
+				 "dev.off();" +
+				 "r=readBin('/home/wei/upload/hello.jpg','raw',1024*1024);" +
+				 "r";
+		
+		try {
+			c.assign(".tmp.", myCode);
+		} catch (RserveException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		REXP re = null;
+		try {
+			re = c.parseAndEval("try(eval(parse('/home/wei/upload/e.R')),silent=TRUE)");
+		} catch (REngineException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (REXPMismatchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (re.inherits("try-error"))
+			System.err.println("Error: " + re.toString());
+		else {
+			// success .. }
+			
+		}
+		final HttpHeaders headers = new HttpHeaders();
+		return new ResponseEntity<byte[]>(re.asBytes(), headers,
+				HttpStatus.CREATED);
+
+
+		/*
+		 * REXP xp = c.parseAndEval("try("+device+"('test.jpg',quality=90))");
+		 * 
+		 * if (xp.inherits("try-error")) { // if the result is of the class
+		 * try-error then there was a problem System.err.println(xp.asString());
+		 * // this is analogous to 'warnings', but for us it's sufficient to get
+		 * just the 1st warning REXP w = c.eval(
+		 * "if (exists('last.warning') && length(last.warning)>0) names(last.warning)[1] else 0"
+		 * ); if (w.isString()) System.err.println(w.asString());
+		 * 
+		 * }
+		 */
+
+		/*
+		 * x = c.eval("R.version.string"); System.out.println(x.asString());
+		 */
+		/*
+		 * r = c.parseAndEval("source(\"" + RCodePath + "\")") .asList();
+		 */
+		
+
+		/*
+		 * //xp = c.parseAndEval(
+		 * "df <- read.csv('/home/wei/upload/zw.csv', sep=';', header=TRUE)");
+		 * xp = c.parseAndEval(
+		 * "df <- read.csv('/home/wei/upload/zw.csv', sep=';', header=TRUE);jpeg('/home/wei/upload/hello.jpg');"
+		 * +
+		 * "bp <- barplot(df$Distance, main='Distance Plot', xlab='Month', ylab='Distance',ylim=c(0,70),names.arg=df$Date);"
+		 * + "text(bp, df$Distance, labels =df$Distance,  pos=3);" +
+		 * "dev.off(); r=readBin('/home/wei/upload/hello.jpg','raw',1024*1024); unlink('/home/wei/upload/hello.jpg'); r"
+		 * );
+		 * 
+		 * } catch (RserveException rse) { // RserveException (transport layer -
+		 * e.g. Rserve is not running) System.out.println(rse); } catch
+		 * (REXPMismatchException mme) { System.out.println(mme);
+		 * mme.printStackTrace(); }catch(Exception e) { // something else
+		 * System.out.println("Something went wrong, but it's not the Rserve: "
+		 * +e.getMessage()); e.printStackTrace(); } b = (REXPRaw)
+		 * r.get("value");
+		 */
+		
+
+	}
+
 	@RequestMapping(value = "/execute", method = RequestMethod.GET)
 	public String execute(ModelMap model, Principal principal) {
-		
-		
 
 		String name = principal.getName(); // get logged in username
 
 		model.addAttribute("name", name);
-		
+
 		return "selectCap";
 
 	}
+
 	@RequestMapping("/capUpload")
 	public ResponseEntity<byte[]> capUploaded(
-			@ModelAttribute("uploadedFile") UploadedFile uploadedFile,			
-			BindingResult result, Principal principal,ModelMap model) {
-	Capability a = null;
-	String jpgName = null;
-	String RCodePath = null;
-	String workingDir = System.getProperty("user.dir");
-	REXPRaw b = null;
-	//String capabilityFullPath = workingDir + "\\" + capName + ".ser";
-	
-	try {
-		// use buffering
-		//InputStream file = new FileInputStream(uploadedFile.getFile());
-		InputStream buffer = new BufferedInputStream(uploadedFile.getFile().getInputStream());
-		ObjectInput input = new ObjectInputStream(buffer);
+			@ModelAttribute("uploadedFile") UploadedFile uploadedFile,
+			BindingResult result, Principal principal, ModelMap model) {
+		Capability a = null;
+		String jpgName = null;
+		String RCodePath = null;
+		String workingDir = System.getProperty("user.dir");
+		REXPRaw b = null;
+		REXP re = null;
+		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
+
 		try {
-			// deserialize the List
-			// List<String> recoveredQuarks =
-			// (List<String>)input.readObject();
-			a = (Capability) input.readObject();
-			// display its data
-			/*
-			 * for(String quark: recoveredQuarks){
-			 * System.out.println("Recovered Quark: " + quark); }
-			 */
-		} finally {
-			input.close();
-		}
-	} catch (ClassNotFoundException ex) {
-		ex.printStackTrace();
-	} catch (IOException ex) {
-		ex.printStackTrace();
-	}
-	String sig = null;
-	String key = null;
-	for (int i = 0; i < a.getCaveats().size(); i++) {
-		if (i == 0) {
-			sig = "123456";
-		}
-		try {
-			sig = HMACSha1Signature.calculateRFC2104HMAC(a.getCaveats()
-					.get(i).toString(), sig);
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SignatureException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	if (sig.equals(a.getSignature())) {
-		System.out.println("validated");
-	} else {
-		System.out.println("signature tampered");
-	}
-	ArrayList<Caveat> caveats = a.getCaveats();
-	Caveat ca = null;
-
-	for (int j = 2; j < caveats.size(); j++) {
-		ca = caveats.get(j);
-
-		if (ca.getCodeRef() != null) {
-			RConnection c = null;
-			
+			// use buffering
+			// InputStream file = new FileInputStream(uploadedFile.getFile());
+			InputStream buffer = new BufferedInputStream(uploadedFile.getFile()
+					.getInputStream());
+			ObjectInput input = new ObjectInputStream(buffer);
 			try {
-				c = new RConnection("129.242.19.118");
-			} catch (RserveException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				// deserialize the List
+				// List<String> recoveredQuarks =
+				// (List<String>)input.readObject();
+				a = (Capability) input.readObject();
+				// display its data
+				/*
+				 * for(String quark: recoveredQuarks){
+				 * System.out.println("Recovered Quark: " + quark); }
+				 */
+			} finally {
+				input.close();
 			}
-			RCodePath = "/home/wei" + ca.getCodeRef().substring(1);
-			System.out.println("RCodePath: " + RCodePath);
-			RList r = null;
+		} catch (ClassNotFoundException ex) {
+			ex.printStackTrace();
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		String sig = null;
+		String key = null;
+		for (int i = 0; i < a.getCaveats().size(); i++) {
+			if (i == 0) {
+				sig = "123456";
+			}
 			try {
+				sig = HMACSha1Signature.calculateRFC2104HMAC(a.getCaveats()
+						.get(i).toString(), sig);
+			} catch (InvalidKeyException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SignatureException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		if (sig.equals(a.getSignature())) {
+			System.out.println("validated");
+		} else {
+			System.out.println("signature tampered");
+		}
+		ArrayList<Caveat> caveats = a.getCaveats();
+		Caveat ca = null;
+
+		for (int j = 2; j < caveats.size(); j++) {
+			ca = caveats.get(j);
+
+			if (ca.getCodeRef() != null) {
+				RConnection c = null;
+
+				try {
+					c = new RConnection("129.242.19.118");
+				} catch (RserveException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				RCodePath = "/home/wei" + ca.getCodeRef().substring(1);
+				System.out.println("RCodePath: " + RCodePath);
 				
-				r = c.parseAndEval("source(\"" + RCodePath + "\")")
-						.asList();
-
-			} catch (REngineException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (REXPMismatchException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				try {
+					re = c.parseAndEval("try(eval(parse(\"" + RCodePath + "\")),silent=TRUE)");
+					 
+				} catch (REngineException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (REXPMismatchException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				if (re.inherits("try-error"))
+					System.err.println("Error: " + re.toString());
+				else {
+					// success .. 
+					System.out.println("R executed OK");
+					
+				}
+				
 			}
-			b = (REXPRaw) r.get("value");
-			
-			/*		
-			try {
-				byte[] bytes = b.asBytes();
-				jpgName = "c:\\users\\zhangwei\\spring\\girji\\src\\main\\webapp\\resources\\images\\" + a.getName() + ".jpg";
-				BufferedOutputStream stream = new BufferedOutputStream(
-						new FileOutputStream(new File(jpgName)));
-				stream.write(bytes);
-				stream.close();
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			*/
 		}
-	}
-	
-	final HttpHeaders headers = new HttpHeaders();
-	return new ResponseEntity<byte[]>(b.asBytes(), headers, HttpStatus.CREATED);
-	
 
-}
-	//@RequestMapping(value = "/fileUpload", method = RequestMethod.POST)
+		final HttpHeaders headers = new HttpHeaders();
+		byte[] byt = null;
+		try {
+			byt = re.asBytes();
+			
+		} catch (REXPMismatchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return new ResponseEntity<byte[]>(byt, headers,
+				HttpStatus.CREATED);
+
+	}
+
+	// @RequestMapping(value = "/fileUpload", method = RequestMethod.POST)
 	@RequestMapping("/fileUpload")
 	public String fileUploaded(
 			@ModelAttribute("uploadedFile") UploadedFile uploadedFile,
@@ -305,17 +390,17 @@ public class CapabilityController {
 			e.printStackTrace();
 		}
 		/*
-		Path currentRelativePath = Paths.get("");
-		String s = currentRelativePath.toAbsolutePath().toString();
-		System.out.println("Current relative path is: " + s);
-		*/
+		 * Path currentRelativePath = Paths.get(""); String s =
+		 * currentRelativePath.toAbsolutePath().toString();
+		 * System.out.println("Current relative path is: " + s);
+		 */
 		String workingDir = System.getProperty("user.dir");
 		String capabilityFullPath = workingDir + "\\" + capName + ".ser";
 		/*
-		File testFile = new File("");
-	    String currentPath = testFile.getAbsolutePath();
-	    System.out.println("current path is: " + currentPath);
-		*/
+		 * File testFile = new File(""); String currentPath =
+		 * testFile.getAbsolutePath(); System.out.println("current path is: " +
+		 * currentPath);
+		 */
 		cap.setName(capName);
 		cap.setDescription(description);
 		try {
@@ -324,12 +409,12 @@ public class CapabilityController {
 			ObjectOutputStream oos = new ObjectOutputStream(fout);
 			oos.writeObject(cap);
 			oos.close();
-			System.out.println(capName+".ser created");
+			System.out.println(capName + ".ser created");
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-		//add the capability to the hashmap
+		// add the capability to the hashmap
 		this.capabilities.add(cap);
 		/*
 		 * 

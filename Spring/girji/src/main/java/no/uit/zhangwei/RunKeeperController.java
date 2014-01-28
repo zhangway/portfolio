@@ -74,9 +74,10 @@ public class RunKeeperController {
 				"http://localhost:8080/zhangwei/index.htm");
 		System.out.println("token: " + token);
 		client = new Client(token);
-		
+		String dataFilePath = null;
 		FitnessActivityFeed fitnessActivities = client.getFitnessActivities();
 		FitnessActivityFeedItem[] feedItems = fitnessActivities.getItems();
+		String workingDir = System.getProperty("user.dir");
 		
 		
 		ArrayList<FitnessActivityFeedItemView> feedItemsView = new ArrayList<FitnessActivityFeedItemView>();
@@ -101,7 +102,8 @@ public class RunKeeperController {
 		FileWriter writer = null;
 		FitnessActivityFeedItemView f = null;
 		try {
-			writer = new FileWriter("c:\\users\\zhangwei\\spring\\girji\\" + name + ".csv");
+			dataFilePath = workingDir + "\\" + name + ".csv";
+			writer = new FileWriter(dataFilePath);
 			writer.append("Date");
 		    writer.append(';');
 		    writer.append("Type");
@@ -158,7 +160,7 @@ public class RunKeeperController {
 			//File file = new File("c:\\users\\zhangwei\\spring\\girji\\" + name + ".csv");
 			
 			// File file = new File("c:\\Users\\zw\\spring\\girji\\test.R");
-			sftpChannel.put(new FileInputStream("c:\\users\\zhangwei\\spring\\girji\\" + name + ".csv"), fullName);
+			sftpChannel.put(new FileInputStream(dataFilePath), fullName);
 
 			sftpChannel.exit();
 			session.disconnect();
