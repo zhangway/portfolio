@@ -1,13 +1,10 @@
 package no.uit.zhangwei;
 
-import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -19,6 +16,10 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import javax.servlet.ServletContext;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
@@ -210,7 +211,24 @@ public class CapabilityController {
 		REXPRaw b = null;
 		REXP re = null;
 		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
-
+		 try {
+			 
+				//File file = new File("C:\\file.xml");
+			 	
+			 	
+				JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
+		 
+				Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+				a = (Capability) jaxbUnmarshaller.unmarshal(uploadedFile.getFile().getInputStream());
+				//System.out.println(a);
+		 
+			  } catch (JAXBException e) {
+				e.printStackTrace();
+			  } catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		 /*
 		try {
 			// use buffering
 			// InputStream file = new FileInputStream(uploadedFile.getFile());
@@ -223,10 +241,8 @@ public class CapabilityController {
 				// (List<String>)input.readObject();
 				a = (Capability) input.readObject();
 				// display its data
-				/*
-				 * for(String quark: recoveredQuarks){
-				 * System.out.println("Recovered Quark: " + quark); }
-				 */
+				
+				
 			} finally {
 				input.close();
 			}
@@ -235,6 +251,7 @@ public class CapabilityController {
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
+		*/
 		String sig = null;
 		String key = null;
 		for (int i = 0; i < a.getCaveats().size(); i++) {
@@ -389,18 +406,39 @@ public class CapabilityController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		cap.setName(capName);
+		cap.setDescription(description);
 		/*
 		 * Path currentRelativePath = Paths.get(""); String s =
 		 * currentRelativePath.toAbsolutePath().toString();
 		 * System.out.println("Current relative path is: " + s);
 		 */
 		String workingDir = System.getProperty("user.dir");
-		String capabilityFullPath = workingDir + "\\" + capName + ".ser";
+		//String capabilityFullPath = workingDir + "\\" + capName + ".ser";
+		String capabilityFullPath = workingDir + "\\" + capName + ".xml";
+		try {
+			 
+			File file2 = new File(capabilityFullPath);
+			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
+			Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+	 
+			// output pretty printed
+			jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+	 
+			jaxbMarshaller.marshal(cap, file2);
+			jaxbMarshaller.marshal(cap, System.out);
+	 
+		      } catch (JAXBException e) {
+			e.printStackTrace();
+		      }
+	 
+		
 		/*
 		 * File testFile = new File(""); String currentPath =
 		 * testFile.getAbsolutePath(); System.out.println("current path is: " +
 		 * currentPath);
 		 */
+	/*
 		cap.setName(capName);
 		cap.setDescription(description);
 		try {
@@ -414,6 +452,7 @@ public class CapabilityController {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		*/
 		// add the capability to the hashmap
 		this.capabilities.add(cap);
 		/*

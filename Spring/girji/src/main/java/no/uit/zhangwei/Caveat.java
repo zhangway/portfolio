@@ -2,7 +2,7 @@ package no.uit.zhangwei;
 
 import java.io.Serializable;
 
-public class Caveat implements Serializable{
+public class Caveat {
 	
 	private String id;
 	private Object input;

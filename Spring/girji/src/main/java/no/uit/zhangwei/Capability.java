@@ -1,15 +1,17 @@
 package no.uit.zhangwei;
 
-import java.io.Serializable;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
-import java.text.Format;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
-public class Capability implements Serializable{
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
+@XmlRootElement
+@XmlType(propOrder = { "name", "description", "caveats", "signature"})
+public class Capability {
 
 	
 	private String name;
@@ -18,6 +20,9 @@ public class Capability implements Serializable{
 	private String signature;
 
 
+	public Capability(){
+		this.caveats = new ArrayList<Caveat>();
+	}
 
 
 
@@ -70,7 +75,7 @@ public class Capability implements Serializable{
 	public String getName() {
 		return name;
 	}
-
+	@XmlElement
 	public void setName(String name) {
 		this.name = name;
 	}
@@ -78,13 +83,22 @@ public class Capability implements Serializable{
 	public String getDescription() {
 		return description;
 	}
-
+	@XmlElement
 	public void setDescription(String description) {
 		this.description = description;
+	}
+	@XmlElementWrapper(name = "caveats")
+	@XmlElement(name="caveat")
+	public void setCaveats(ArrayList<Caveat> caveats) {
+		this.caveats = caveats;
 	}
 
 	public ArrayList<Caveat> getCaveats() {
 		return this.caveats;
+	}
+	@XmlElement
+	public void setSignature(String signature) {
+		this.signature = signature;
 	}
 
 	public String getSignature() {
