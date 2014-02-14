@@ -18,6 +18,10 @@
 	</p>
 	
 	<p>
+	<a href="<c:url value="/opencpu"/>">OpenCPU</a>
+	</p>
+	
+	<p>
 	<a href="<c:url value="/create_capability"/>">Create A Capability</a>
 	</p>
 </body>

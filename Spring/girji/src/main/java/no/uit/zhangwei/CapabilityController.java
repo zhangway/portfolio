@@ -1,10 +1,11 @@
 package no.uit.zhangwei;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -21,6 +22,16 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.REXPRaw;
@@ -55,6 +66,8 @@ public class CapabilityController {
 	FileValidator fileValidator;
 	ServletContext servletContext;
 	ArrayList<Capability> capabilities;
+	
+	
 
 	@RequestMapping(value = "/create_capability", method = RequestMethod.GET)
 	public String createCapability(ModelMap model, Principal principal) {
@@ -67,11 +80,122 @@ public class CapabilityController {
 	public String myCapabilities(ModelMap model, Principal principal) {
 
 		String name = principal.getName(); // get logged in username
+		
 		String message = name + "'s Capabilities:";
 		model.addAttribute("capabilities", this.capabilities);
 		return "capabilities";
 
 	}
+	
+	@RequestMapping(value = "/opencpu", method = RequestMethod.GET)
+	public String opencpu(ModelMap model, Principal principal) {
+
+		String name = principal.getName(); // get logged in username
+		String user = "a";
+		HttpClient client = new DefaultHttpClient();
+		String url = "http://129.242.19.118/ocpu/library/root/R/root";
+		HttpPost post = new HttpPost(url);
+		MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+		entityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+		final File file = new File("test.csv");
+	    FileBody fb = new FileBody(file);
+	    entityBuilder.addPart("file", fb); 
+	    entityBuilder.addTextBody("user", user, ContentType.TEXT_PLAIN);
+	    final HttpEntity yourEntity = entityBuilder.build();
+	    post.setEntity(yourEntity);
+	    System.out.println("Post parameters : " + post.getEntity());
+	    HttpResponse response = null;
+	    try {
+			response = client.execute(post);
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}    
+	    BufferedReader rd = null;
+		try {
+			rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    String body = "";
+	    String content = "";
+
+	    try {
+			while ((body = rd.readLine()) != null) 
+			{
+			    content += body + "\n";
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		/*
+		String url = "http://129.242.19.118/ocpu/library/root/R/root";
+		HttpPost post = new HttpPost(url);
+		MultipartEntity entity = new MultipartEntity( HttpMultipartMode.BROWSER_COMPATIBLE );
+		*/
+		
+		/*
+		HttpClient client = new DefaultHttpClient();
+		String url = "http://129.242.19.118/ocpu/library/";
+		HttpGet request = new HttpGet(url);
+		request.addHeader("User-Agent", "girji");
+		HttpResponse response = null;
+		try {
+			response = client.execute(request);
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode == org.apache.http.HttpStatus.SC_OK) {            
+        	
+        	BufferedReader rd = null;
+			try {
+				rd = new BufferedReader(
+				        new InputStreamReader(response.getEntity().getContent()));
+			} catch (IllegalStateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		StringBuffer result = new StringBuffer();
+		String line = "";
+		try {
+			while ((line = rd.readLine()) != null) {
+				result.append(line);
+				result.append(System.getProperty("line.separator"));
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		System.out.println(result.toString());
+        } else {
+            //throw new ClientException("Unexpected statusCode " + statusCode);
+        	System.out.println("statusCode: " + statusCode);
+        }
+        */
+		String message = name + "'s Capabilities:";
+		model.addAttribute("capabilities", this.capabilities);
+		return "capabilities";
+
+	}
+
 
 	@RequestMapping(value = "/test", method = RequestMethod.GET)
 	public ResponseEntity<byte[]> test(ModelMap model, Principal principal) throws REXPMismatchException {
@@ -141,8 +265,7 @@ public class CapabilityController {
 			
 		}
 		final HttpHeaders headers = new HttpHeaders();
-		return new ResponseEntity<byte[]>(re.asBytes(), headers,
-				HttpStatus.CREATED);
+		return new ResponseEntity<byte[]>(re.asBytes(), headers, HttpStatus.CREATED );
 
 
 		/*
