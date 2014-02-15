@@ -1,8 +1,11 @@
 package no.uit.zhangwei;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -26,12 +29,12 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.REXPRaw;
@@ -66,8 +69,6 @@ public class CapabilityController {
 	FileValidator fileValidator;
 	ServletContext servletContext;
 	ArrayList<Capability> capabilities;
-	
-	
 
 	@RequestMapping(value = "/create_capability", method = RequestMethod.GET)
 	public String createCapability(ModelMap model, Principal principal) {
@@ -80,32 +81,65 @@ public class CapabilityController {
 	public String myCapabilities(ModelMap model, Principal principal) {
 
 		String name = principal.getName(); // get logged in username
-		
+
 		String message = name + "'s Capabilities:";
 		model.addAttribute("capabilities", this.capabilities);
 		return "capabilities";
 
 	}
-	
+
 	@RequestMapping(value = "/opencpu", method = RequestMethod.GET)
-	public String opencpu(ModelMap model, Principal principal) {
+	public String opencpu(ModelMap model, Principal principal) throws IOException {
 
 		String name = principal.getName(); // get logged in username
-		String user = "a";
-		HttpClient client = new DefaultHttpClient();
+		/*
+		String test = "/ocpu/tmp/x0674fb83/files/owner.csv";
+
+		char[] tmp = new char[128];
+		int m = 0;
+		ArrayList<String> value = new ArrayList<String>();
+		int k = 0;
+		char c;
+		do {
+			c = test.charAt(k);
+			if (c != '/') {
+				tmp[m] = test.charAt(k);
+			} else {
+				tmp[m] = '\0';
+				if (tmp[0] != '\0') {
+					value.add(new String(tmp, 0, m));
+				}
+
+				m = -1;
+			}
+			if (k == test.length() - 1) {
+				value.add(new String(tmp, 0, m + 1));
+			}
+			m++;
+			k++;
+		} while (k < test.length());
+
+		for (String str : value) {
+			System.out.println(str);
+		}
+		 */
+		String user = "'a'";
+		HttpClient client = HttpClientBuilder.create().build();
 		String url = "http://129.242.19.118/ocpu/library/root/R/root";
 		HttpPost post = new HttpPost(url);
+
 		MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
 		entityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
 		final File file = new File("test.csv");
-	    FileBody fb = new FileBody(file);
-	    entityBuilder.addPart("file", fb); 
-	    entityBuilder.addTextBody("user", user, ContentType.TEXT_PLAIN);
-	    final HttpEntity yourEntity = entityBuilder.build();
-	    post.setEntity(yourEntity);
-	    System.out.println("Post parameters : " + post.getEntity());
-	    HttpResponse response = null;
-	    try {
+		FileBody fb = new FileBody(file);
+
+		entityBuilder.addPart("file", fb);
+		entityBuilder.addTextBody("user", "'a'");
+		final HttpEntity yourEntity = entityBuilder.build();
+		post.setEntity(yourEntity);
+		System.out.println("Post parameters : " + post.getEntity());
+		HttpResponse response = null;
+		try {
 			response = client.execute(post);
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
@@ -113,10 +147,11 @@ public class CapabilityController {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}    
-	    BufferedReader rd = null;
+		}
+		BufferedReader rd = null;
 		try {
-			rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+			rd = new BufferedReader(new InputStreamReader(response.getEntity()
+					.getContent()));
 		} catch (IllegalStateException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -124,81 +159,80 @@ public class CapabilityController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	    String body = "";
-	    String content = "";
-
-	    try {
-			while ((body = rd.readLine()) != null) 
-			{
-			    content += body + "\n";
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		/*
-		String url = "http://129.242.19.118/ocpu/library/root/R/root";
-		HttpPost post = new HttpPost(url);
-		MultipartEntity entity = new MultipartEntity( HttpMultipartMode.BROWSER_COMPATIBLE );
-		*/
 		
-		/*
-		HttpClient client = new DefaultHttpClient();
-		String url = "http://129.242.19.118/ocpu/library/";
+		String body = "";
+		String content = "";
+		ArrayList<String> resultList = new ArrayList<String>();
+		try {
+			while ((body = rd.readLine()) != null) {
+				resultList.add(body);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		String tmpUrl = "http://129.242.19.118" + resultList.get(4);
+
 		HttpGet request = new HttpGet(url);
+
+		// add request header
 		request.addHeader("User-Agent", "girji");
-		HttpResponse response = null;
-		try {
-			response = client.execute(request);
-		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		int statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode == org.apache.http.HttpStatus.SC_OK) {            
-        	
-        	BufferedReader rd = null;
-			try {
-				rd = new BufferedReader(
-				        new InputStreamReader(response.getEntity().getContent()));
-			} catch (IllegalStateException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		response = client.execute(request);
 
-		StringBuffer result = new StringBuffer();
-		String line = "";
-		try {
-			while ((line = rd.readLine()) != null) {
-				result.append(line);
-				result.append(System.getProperty("line.separator"));
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		System.out.println("Response Code : "
+				+ response.getStatusLine().getStatusCode());
 
-		System.out.println(result.toString());
-        } else {
-            //throw new ClientException("Unexpected statusCode " + statusCode);
-        	System.out.println("statusCode: " + statusCode);
-        }
-        */
+		BufferedInputStream bis = new BufferedInputStream(response.getEntity().getContent());
+		//String filePath = ...;
+		BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File("owner.csv")));
+		int inByte;
+		while((inByte = bis.read()) != -1) bos.write(inByte);
+		bis.close();
+		bos.close();
+
+		/*
+		 * String url = "http://129.242.19.118/ocpu/library/root/R/root";
+		 * HttpPost post = new HttpPost(url); MultipartEntity entity = new
+		 * MultipartEntity( HttpMultipartMode.BROWSER_COMPATIBLE );
+		 */
+
+		/*
+		 * HttpClient client = new DefaultHttpClient(); String url =
+		 * "http://129.242.19.118/ocpu/library/"; HttpGet request = new
+		 * HttpGet(url); request.addHeader("User-Agent", "girji"); HttpResponse
+		 * response = null; try { response = client.execute(request); } catch
+		 * (ClientProtocolException e) { // TODO Auto-generated catch block
+		 * e.printStackTrace(); } catch (IOException e) { // TODO Auto-generated
+		 * catch block e.printStackTrace(); } int statusCode =
+		 * response.getStatusLine().getStatusCode(); if (statusCode ==
+		 * org.apache.http.HttpStatus.SC_OK) {
+		 * 
+		 * BufferedReader rd = null; try { rd = new BufferedReader( new
+		 * InputStreamReader(response.getEntity().getContent())); } catch
+		 * (IllegalStateException e) { // TODO Auto-generated catch block
+		 * e.printStackTrace(); } catch (IOException e) { // TODO Auto-generated
+		 * catch block e.printStackTrace(); }
+		 * 
+		 * StringBuffer result = new StringBuffer(); String line = ""; try {
+		 * while ((line = rd.readLine()) != null) { result.append(line);
+		 * result.append(System.getProperty("line.separator")); } } catch
+		 * (IOException e) { // TODO Auto-generated catch block
+		 * e.printStackTrace(); }
+		 * 
+		 * System.out.println(result.toString()); } else { //throw new
+		 * ClientException("Unexpected statusCode " + statusCode);
+		 * System.out.println("statusCode: " + statusCode); }
+		 */
 		String message = name + "'s Capabilities:";
 		model.addAttribute("capabilities", this.capabilities);
 		return "capabilities";
 
 	}
 
-
 	@RequestMapping(value = "/test", method = RequestMethod.GET)
-	public ResponseEntity<byte[]> test(ModelMap model, Principal principal) throws REXPMismatchException {
+	public ResponseEntity<byte[]> test(ModelMap model, Principal principal)
+			throws REXPMismatchException {
 
 		RConnection c = null;
 		REXPRaw b = null;
@@ -217,31 +251,31 @@ public class CapabilityController {
 		REXP x = null;
 		REXP xp = null;
 		String myCode = null;
-		
+
 		myCode = "df <- read.csv('/home/wei/upload/zw.csv', sep=';', header=TRUE);jpeg('/home/wei/upload/hello.jpg');"
 				+ "bp <- barplot(df$Distance, main='Distance Plot', xlab='Month', ylab='Distance',ylim=c(0,70),names.arg=df$Date);"
 				+ "text(bp, df$Distance, labels =df$Distance,  pos=3);"
 				+ "dev.off(); r=readBin('/home/wei/upload/hello.jpg','raw',1024*1024); unlink('/home/wei/upload/hello.jpg'); r";
 		myCode = "R.version.string";
-		myCode = "library(lubridate);" + 
-				 "df <- read.csv('/home/wei/upload/zhangwei.csv', sep=';', header=TRUE);" +
-				 "timeSeriesDatesZ <- as.POSIXct(df$Date, format = '%Y:%j:%H:%M:%S');" + 
-				 "date <- dmy_hms(df$Date); " + 
-				 "year <- year(date);" + 
-				 "month <- month(date, label=FALSE);" + 
-				 "strMonth <- sprintf('%02d', month);" +
-				 "strYear <- sprintf('%d', year);" +
-				 "yearmon <- paste(strYear,strMonth, sep='');" + 
-				 "df$Date <- as.integer(yearmon); " + 
-				 "data <- aggregate(Distance ~ Date, df, function(x) sum=sum(x)); " +
-				 "data <- data[order(data$Date),]; " +
-				 "jpeg('/home/wei/upload/hello.jpg'); " +
-				 "bp <- barplot(data$Distance, main='Distance Plot', xlab='Month', ylab='Distance',ylim=c(0,70),names.arg=data$Date);" +
-				 "text(bp, data$Distance, labels =data$Distance,  pos=3); " +
-				 "dev.off();" +
-				 "r=readBin('/home/wei/upload/hello.jpg','raw',1024*1024);" +
-				 "r";
-		
+		myCode = "library(lubridate);"
+				+ "df <- read.csv('/home/wei/upload/zhangwei.csv', sep=';', header=TRUE);"
+				+ "timeSeriesDatesZ <- as.POSIXct(df$Date, format = '%Y:%j:%H:%M:%S');"
+				+ "date <- dmy_hms(df$Date); "
+				+ "year <- year(date);"
+				+ "month <- month(date, label=FALSE);"
+				+ "strMonth <- sprintf('%02d', month);"
+				+ "strYear <- sprintf('%d', year);"
+				+ "yearmon <- paste(strYear,strMonth, sep='');"
+				+ "df$Date <- as.integer(yearmon); "
+				+ "data <- aggregate(Distance ~ Date, df, function(x) sum=sum(x)); "
+				+ "data <- data[order(data$Date),]; "
+				+ "jpeg('/home/wei/upload/hello.jpg'); "
+				+ "bp <- barplot(data$Distance, main='Distance Plot', xlab='Month', ylab='Distance',ylim=c(0,70),names.arg=data$Date);"
+				+ "text(bp, data$Distance, labels =data$Distance,  pos=3); "
+				+ "dev.off();"
+				+ "r=readBin('/home/wei/upload/hello.jpg','raw',1024*1024);"
+				+ "r";
+
 		try {
 			c.assign(".tmp.", myCode);
 		} catch (RserveException e) {
@@ -262,11 +296,11 @@ public class CapabilityController {
 			System.err.println("Error: " + re.toString());
 		else {
 			// success .. }
-			
+
 		}
 		final HttpHeaders headers = new HttpHeaders();
-		return new ResponseEntity<byte[]>(re.asBytes(), headers, HttpStatus.CREATED );
-
+		return new ResponseEntity<byte[]>(re.asBytes(), headers,
+				HttpStatus.CREATED);
 
 		/*
 		 * REXP xp = c.parseAndEval("try("+device+"('test.jpg',quality=90))");
@@ -287,7 +321,6 @@ public class CapabilityController {
 		/*
 		 * r = c.parseAndEval("source(\"" + RCodePath + "\")") .asList();
 		 */
-		
 
 		/*
 		 * //xp = c.parseAndEval(
@@ -308,7 +341,6 @@ public class CapabilityController {
 		 * +e.getMessage()); e.printStackTrace(); } b = (REXPRaw)
 		 * r.get("value");
 		 */
-		
 
 	}
 
@@ -334,47 +366,37 @@ public class CapabilityController {
 		REXPRaw b = null;
 		REXP re = null;
 		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
-		 try {
-			 
-				//File file = new File("C:\\file.xml");
-			 	
-			 	
-				JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
-		 
-				Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-				a = (Capability) jaxbUnmarshaller.unmarshal(uploadedFile.getFile().getInputStream());
-				//System.out.println(a);
-		 
-			  } catch (JAXBException e) {
-				e.printStackTrace();
-			  } catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		 /*
 		try {
-			// use buffering
-			// InputStream file = new FileInputStream(uploadedFile.getFile());
-			InputStream buffer = new BufferedInputStream(uploadedFile.getFile()
+
+			// File file = new File("C:\\file.xml");
+
+			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
+
+			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+			a = (Capability) jaxbUnmarshaller.unmarshal(uploadedFile.getFile()
 					.getInputStream());
-			ObjectInput input = new ObjectInputStream(buffer);
-			try {
-				// deserialize the List
-				// List<String> recoveredQuarks =
-				// (List<String>)input.readObject();
-				a = (Capability) input.readObject();
-				// display its data
-				
-				
-			} finally {
-				input.close();
-			}
-		} catch (ClassNotFoundException ex) {
-			ex.printStackTrace();
-		} catch (IOException ex) {
-			ex.printStackTrace();
+			// System.out.println(a);
+
+		} catch (JAXBException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		*/
+		/*
+		 * try { // use buffering // InputStream file = new
+		 * FileInputStream(uploadedFile.getFile()); InputStream buffer = new
+		 * BufferedInputStream(uploadedFile.getFile() .getInputStream());
+		 * ObjectInput input = new ObjectInputStream(buffer); try { //
+		 * deserialize the List // List<String> recoveredQuarks = //
+		 * (List<String>)input.readObject(); a = (Capability)
+		 * input.readObject(); // display its data
+		 * 
+		 * 
+		 * } finally { input.close(); } } catch (ClassNotFoundException ex) {
+		 * ex.printStackTrace(); } catch (IOException ex) {
+		 * ex.printStackTrace(); }
+		 */
 		String sig = null;
 		String key = null;
 		for (int i = 0; i < a.getCaveats().size(); i++) {
@@ -418,10 +440,11 @@ public class CapabilityController {
 				}
 				RCodePath = "/home/wei" + ca.getCodeRef().substring(1);
 				System.out.println("RCodePath: " + RCodePath);
-				
+
 				try {
-					re = c.parseAndEval("try(eval(parse(\"" + RCodePath + "\")),silent=TRUE)");
-					 
+					re = c.parseAndEval("try(eval(parse(\"" + RCodePath
+							+ "\")),silent=TRUE)");
+
 				} catch (REngineException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -432,11 +455,11 @@ public class CapabilityController {
 				if (re.inherits("try-error"))
 					System.err.println("Error: " + re.toString());
 				else {
-					// success .. 
+					// success ..
 					System.out.println("R executed OK");
-					
+
 				}
-				
+
 			}
 		}
 
@@ -444,13 +467,12 @@ public class CapabilityController {
 		byte[] byt = null;
 		try {
 			byt = re.asBytes();
-			
+
 		} catch (REXPMismatchException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return new ResponseEntity<byte[]>(byt, headers,
-				HttpStatus.CREATED);
+		return new ResponseEntity<byte[]>(byt, headers, HttpStatus.CREATED);
 
 	}
 
@@ -537,45 +559,39 @@ public class CapabilityController {
 		 * System.out.println("Current relative path is: " + s);
 		 */
 		String workingDir = System.getProperty("user.dir");
-		//String capabilityFullPath = workingDir + "\\" + capName + ".ser";
+		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
 		String capabilityFullPath = workingDir + "\\" + capName + ".xml";
 		try {
-			 
+
 			File file2 = new File(capabilityFullPath);
 			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
 			Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-	 
+
 			// output pretty printed
 			jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-	 
+
 			jaxbMarshaller.marshal(cap, file2);
 			jaxbMarshaller.marshal(cap, System.out);
-	 
-		      } catch (JAXBException e) {
+
+		} catch (JAXBException e) {
 			e.printStackTrace();
-		      }
-	 
-		
+		}
+
 		/*
 		 * File testFile = new File(""); String currentPath =
 		 * testFile.getAbsolutePath(); System.out.println("current path is: " +
 		 * currentPath);
 		 */
-	/*
-		cap.setName(capName);
-		cap.setDescription(description);
-		try {
-
-			FileOutputStream fout = new FileOutputStream(capabilityFullPath);
-			ObjectOutputStream oos = new ObjectOutputStream(fout);
-			oos.writeObject(cap);
-			oos.close();
-			System.out.println(capName + ".ser created");
-
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		*/
+		/*
+		 * cap.setName(capName); cap.setDescription(description); try {
+		 * 
+		 * FileOutputStream fout = new FileOutputStream(capabilityFullPath);
+		 * ObjectOutputStream oos = new ObjectOutputStream(fout);
+		 * oos.writeObject(cap); oos.close(); System.out.println(capName +
+		 * ".ser created");
+		 * 
+		 * } catch (Exception ex) { ex.printStackTrace(); }
+		 */
 		// add the capability to the hashmap
 		this.capabilities.add(cap);
 		/*
