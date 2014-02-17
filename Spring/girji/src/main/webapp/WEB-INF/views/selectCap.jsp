@@ -9,7 +9,7 @@
 <body>
 
 	<form:form method="post" enctype="multipart/form-data"  
-   modelAttribute="uploadedFile" action="capUpload.htm">  
+   modelAttribute="uploadedFile" action="capUploaded.htm">  
    <table>  
     <tr>  
      <td>Import your capability file: </td>  

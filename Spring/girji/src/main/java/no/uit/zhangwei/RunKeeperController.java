@@ -64,6 +64,8 @@ public class RunKeeperController {
 
 		return "index";
 	}
+	
+	
 
 	@RequestMapping(value = "/gettoken", method = RequestMethod.POST)
 	public String retrieve(@RequestParam("code") String code, Model model, Principal principal) {

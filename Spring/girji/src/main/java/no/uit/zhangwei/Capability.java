@@ -41,7 +41,7 @@ public class Capability {
 			//root
 			if (i == 0) {
 				caveat.setOperation("read, write, delete");
-				
+				caveat.setCodeRef(codeRef);
 				this.caveats.add(caveat);
 				//strCaveat = this.caveats.get(i).toString();
 				sigRoot = HMACSha1Signature
@@ -49,6 +49,7 @@ public class Capability {
 								.get(i).toString(), "123456");
 			} else {
 				caveat.setOperation("read, write");
+				caveat.setCodeRef(codeRef);
 				this.caveats.add(caveat);
 
 				this.signature = HMACSha1Signature.calculateRFC2104HMAC(this.caveats
@@ -63,6 +64,40 @@ public class Capability {
 					.get(j).toString(), this.signature);
 		}
 		
+
+	}
+	
+	public Capability(Object input, String user, String codeRef, String predicate,
+			Boolean allowDelegation) throws InvalidKeyException,
+			SignatureException, NoSuchAlgorithmException {
+
+		//first item: root, second item: owner
+		String sigRoot = null;
+		this.caveats = new ArrayList<Caveat>();
+		
+		String strCaveat = null;
+		for (int i = 0; i < 2; i++) {
+			Caveat caveat = new Caveat();
+			//root
+			if (i == 0) {
+				caveat.setOperation("read, write, delete");
+				caveat.setCodeRef("/ocpu/library/root/R/root");
+				this.caveats.add(caveat);
+				//strCaveat = this.caveats.get(i).toString();
+				sigRoot = HMACSha1Signature
+						.calculateRFC2104HMAC(this.caveats
+								.get(i).toString(), "123456");
+			} else {
+				caveat.setOperation("read, write");
+				caveat.setCodeRef(codeRef);
+				caveat.setPredicate(predicate);
+				this.caveats.add(caveat);
+
+				this.signature = HMACSha1Signature.calculateRFC2104HMAC(this.caveats
+						.get(i).toString(), sigRoot);
+			}
+
+		}
 
 	}
 	

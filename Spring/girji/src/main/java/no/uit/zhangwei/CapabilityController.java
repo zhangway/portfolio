@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -55,6 +56,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import au.com.bytecode.opencsv.CSVReader;
+
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
@@ -69,11 +72,15 @@ public class CapabilityController {
 	FileValidator fileValidator;
 	ServletContext servletContext;
 	ArrayList<Capability> capabilities;
+	
+	
+	static final String OPENCPU_SERVER = "http://129.242.19.118";
 
+	
 	@RequestMapping(value = "/create_capability", method = RequestMethod.GET)
 	public String createCapability(ModelMap model, Principal principal) {
 		this.capabilities = new ArrayList<Capability>();
-		return "createCap";
+		return "newCap";
 
 	}
 
@@ -84,7 +91,7 @@ public class CapabilityController {
 
 		String message = name + "'s Capabilities:";
 		model.addAttribute("capabilities", this.capabilities);
-		return "capabilities";
+		return "capabilityList";
 
 	}
 
@@ -123,73 +130,9 @@ public class CapabilityController {
 			System.out.println(str);
 		}
 		 */
-		String user = "'a'";
-		HttpClient client = HttpClientBuilder.create().build();
-		String url = "http://129.242.19.118/ocpu/library/root/R/root";
-		HttpPost post = new HttpPost(url);
-
-		MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
-		entityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-		final File file = new File("test.csv");
-		FileBody fb = new FileBody(file);
-
-		entityBuilder.addPart("file", fb);
-		entityBuilder.addTextBody("user", "'a'");
-		final HttpEntity yourEntity = entityBuilder.build();
-		post.setEntity(yourEntity);
-		System.out.println("Post parameters : " + post.getEntity());
-		HttpResponse response = null;
-		try {
-			response = client.execute(post);
-		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		BufferedReader rd = null;
-		try {
-			rd = new BufferedReader(new InputStreamReader(response.getEntity()
-					.getContent()));
-		} catch (IllegalStateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
-		String body = "";
-		String content = "";
-		ArrayList<String> resultList = new ArrayList<String>();
-		try {
-			while ((body = rd.readLine()) != null) {
-				resultList.add(body);
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
-		String tmpUrl = "http://129.242.19.118" + resultList.get(4);
-
-		HttpGet request = new HttpGet(url);
-
-		// add request header
-		request.addHeader("User-Agent", "girji");
-		response = client.execute(request);
-
-		System.out.println("Response Code : "
-				+ response.getStatusLine().getStatusCode());
-
-		BufferedInputStream bis = new BufferedInputStream(response.getEntity().getContent());
-		//String filePath = ...;
-		BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File("owner.csv")));
-		int inByte;
-		while((inByte = bis.read()) != -1) bos.write(inByte);
-		bis.close();
-		bos.close();
+		
 
 		/*
 		 * String url = "http://129.242.19.118/ocpu/library/root/R/root";
@@ -228,6 +171,152 @@ public class CapabilityController {
 		model.addAttribute("capabilities", this.capabilities);
 		return "capabilities";
 
+	}
+	
+	private String getFile(String file, ArrayList<String> result) throws ClientProtocolException, IOException{
+		HttpClient httpClient = HttpClientBuilder.create().build();
+		String s = result.get(4);
+		String f = s.substring(s.lastIndexOf('/')+1);
+		String filePath;
+		if(file.equalsIgnoreCase(f)){
+			filePath = result.get(5);
+		}else{
+			filePath = result.get(4);
+		}
+		
+		String url = OPENCPU_SERVER + filePath;
+
+		HttpGet request = new HttpGet(url);
+
+		// add request header
+		request.addHeader("User-Agent", "girji");
+		HttpResponse response = httpClient.execute(request);
+
+		System.out.println("Response Code : "
+				+ response.getStatusLine().getStatusCode());
+
+		BufferedInputStream bis = new BufferedInputStream(response.getEntity().getContent());
+		String fileName = filePath.substring(filePath.lastIndexOf('/')+1);
+		BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(fileName)));
+		int inByte;
+		while((inByte = bis.read()) != -1) bos.write(inByte);
+		bis.close();
+		bos.close();
+		return fileName;
+	}
+	
+	private ArrayList<String> execute(String filePath, String name, String codeRef){
+		String user = "'" + name + "'";
+		HttpClient client = HttpClientBuilder.create().build();
+		String url = OPENCPU_SERVER + codeRef;
+		HttpPost post = new HttpPost(url);
+
+		MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+		entityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+		final File file = new File(filePath);
+		FileBody fb = new FileBody(file);
+
+		entityBuilder.addPart("file", fb);
+		entityBuilder.addTextBody("user", user);
+		final HttpEntity yourEntity = entityBuilder.build();
+		post.setEntity(yourEntity);
+		System.out.println("Post parameters : " + post.getEntity());
+		HttpResponse response = null;
+		try {
+			response = client.execute(post);
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		int responseCode = response.getStatusLine().getStatusCode();
+		
+		System.out.println("Response Code : "
+				+ responseCode);
+		
+		BufferedReader rd = null;
+		try {
+			rd = new BufferedReader(new InputStreamReader(response.getEntity()
+					.getContent()));
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		String body = "";
+		String content = "";
+		ArrayList<String> resultList = new ArrayList<String>();
+		try {
+			while ((body = rd.readLine()) != null) {
+				resultList.add(body);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return resultList;
+	}
+	
+	private ArrayList<String> execute(String filePath, String codeRef){
+		HttpClient client = HttpClientBuilder.create().build();
+		
+		String url = OPENCPU_SERVER + codeRef;
+		HttpPost post = new HttpPost(url);
+
+		MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+		entityBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+		final File file = new File(filePath);
+		FileBody fb = new FileBody(file);
+
+		entityBuilder.addPart("file", fb);
+		
+		final HttpEntity yourEntity = entityBuilder.build();
+		post.setEntity(yourEntity);
+		System.out.println("Post parameters : " + post.getEntity());
+		HttpResponse response = null;
+		try {
+			response = client.execute(post);
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		int responseCode = response.getStatusLine().getStatusCode();
+		
+		System.out.println("Response Code : "
+				+ responseCode);
+		
+		BufferedReader rd = null;
+		try {
+			rd = new BufferedReader(new InputStreamReader(response.getEntity()
+					.getContent()));
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		String body = "";
+		String content = "";
+		ArrayList<String> resultList = new ArrayList<String>();
+		try {
+			while ((body = rd.readLine()) != null) {
+				resultList.add(body);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return resultList;
 	}
 
 	@RequestMapping(value = "/test", method = RequestMethod.GET)
@@ -355,6 +444,7 @@ public class CapabilityController {
 
 	}
 
+	
 	@RequestMapping("/capUpload")
 	public ResponseEntity<byte[]> capUploaded(
 			@ModelAttribute("uploadedFile") UploadedFile uploadedFile,
@@ -426,7 +516,8 @@ public class CapabilityController {
 		ArrayList<Caveat> caveats = a.getCaveats();
 		Caveat ca = null;
 
-		for (int j = 2; j < caveats.size(); j++) {
+		
+		for (int j = 0; j < caveats.size(); j++) {
 			ca = caveats.get(j);
 
 			if (ca.getCodeRef() != null) {
@@ -474,6 +565,139 @@ public class CapabilityController {
 		}
 		return new ResponseEntity<byte[]>(byt, headers, HttpStatus.CREATED);
 
+	}
+	
+	@RequestMapping("/capUploaded")
+	public String capUpload(
+			@ModelAttribute("uploadedFile") UploadedFile uploadedFile,
+			BindingResult result, Principal principal, ModelMap model) throws ClientProtocolException, IOException {
+		Capability a = null;
+		String jpgName = null;
+		String RCodePath = null;
+		String workingDir = System.getProperty("user.dir");
+		REXPRaw b = null;
+		REXP re = null;
+		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
+		try {
+
+			// File file = new File("C:\\file.xml");
+
+			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
+
+			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+			a = (Capability) jaxbUnmarshaller.unmarshal(uploadedFile.getFile()
+					.getInputStream());
+			// System.out.println(a);
+
+		} catch (JAXBException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		String sig = null;
+		String key = null;
+		for (int i = 0; i < a.getCaveats().size(); i++) {
+			if (i == 0) {
+				sig = "123456";
+			}
+			try {
+				sig = HMACSha1Signature.calculateRFC2104HMAC(a.getCaveats()
+						.get(i).toString(), sig);
+			} catch (InvalidKeyException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SignatureException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		if (sig.equals(a.getSignature())) {
+			System.out.println("validated");
+		} else {
+			System.out.println("signature tampered");
+		}
+		ArrayList<Caveat> caveats = a.getCaveats();
+		Caveat ca = null;
+		String filePath = null;
+		String codeRef = null;
+		ArrayList<String> resultList = null;
+		String name = principal.getName();
+		//execute the capability chain from root item
+		for (int j = 0; j < caveats.size(); j++) {
+			ca = caveats.get(j);
+			if (ca.getCodeRef() != null) {
+				codeRef = ca.getCodeRef();
+				if (j == 0) {
+					filePath = "test.csv";
+					resultList = execute(filePath, name, codeRef);
+				} else {
+					resultList = execute(filePath, codeRef);
+				}
+				filePath = getFile(filePath, resultList);
+
+			}
+		}
+			
+		model.addAttribute("filePath", filePath );
+		
+		return "result";
+
+		
+	}
+	
+	@RequestMapping("/capNew")
+	public String capNew(
+			@ModelAttribute("codeRef") String codeRef,
+			@RequestParam("description") String description,
+			@RequestParam("name") String capName,
+			@RequestParam("accessPeriod") String accessPeriod,
+			Principal principal) {
+		String name = principal.getName();
+		Capability cap = null;
+		try {
+			cap = new Capability(null, name, codeRef, accessPeriod, false);
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		cap.setName(capName);
+		cap.setDescription(description);
+		
+		String workingDir = System.getProperty("user.dir");
+		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
+		String capabilityFullPath = workingDir + "\\" + capName + ".xml";
+		try {
+
+			File file2 = new File(capabilityFullPath);
+			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
+			Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+
+			// output pretty printed
+			jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+
+			jaxbMarshaller.marshal(cap, file2);
+			jaxbMarshaller.marshal(cap, System.out);
+
+		} catch (JAXBException e) {
+			e.printStackTrace();
+		}
+		
+		this.capabilities.add(cap);
+		
+		return "redirect:/mycapabilities";
+		
 	}
 
 	// @RequestMapping(value = "/fileUpload", method = RequestMethod.POST)
@@ -577,46 +801,11 @@ public class CapabilityController {
 			e.printStackTrace();
 		}
 
-		/*
-		 * File testFile = new File(""); String currentPath =
-		 * testFile.getAbsolutePath(); System.out.println("current path is: " +
-		 * currentPath);
-		 */
-		/*
-		 * cap.setName(capName); cap.setDescription(description); try {
-		 * 
-		 * FileOutputStream fout = new FileOutputStream(capabilityFullPath);
-		 * ObjectOutputStream oos = new ObjectOutputStream(fout);
-		 * oos.writeObject(cap); oos.close(); System.out.println(capName +
-		 * ".ser created");
-		 * 
-		 * } catch (Exception ex) { ex.printStackTrace(); }
-		 */
-		// add the capability to the hashmap
+		
 		this.capabilities.add(cap);
-		/*
-		 * 
-		 * try { inputStream = file.getInputStream(); fullPath =
-		 * "C:/Users/zhangwei/files/" + fileName; File newFile = new
-		 * File(fullPath); if (!newFile.exists()) { newFile.createNewFile(); }
-		 * outputStream = new FileOutputStream(newFile); int read = 0; byte[]
-		 * bytes = new byte[1024];
-		 * 
-		 * while ((read = inputStream.read(bytes)) != -1) {
-		 * outputStream.write(bytes, 0, read); } outputStream.close(); } catch
-		 * (IOException e) { // TODO Auto-generated catch block
-		 * e.printStackTrace(); }
-		 */
-		// generate a cap for target service
-
-		// Capability capTS = new Capability(fullPath, SECRET_KEY);
-
-		// generate a cap for the user who uploaded the file.
-
-		// Capability capAdmin = new Capability(null, "read", capTS);
+		
 		return "redirect:/mycapabilities";
-
-		// return new ModelAndView("showFile", "message", fileName);
+		
 	}
 
 }

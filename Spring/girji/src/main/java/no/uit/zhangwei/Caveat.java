@@ -2,6 +2,8 @@ package no.uit.zhangwei;
 
 import java.io.Serializable;
 
+import javax.xml.bind.annotation.XmlElement;
+
 public class Caveat {
 	
 	private String id;
@@ -52,9 +54,10 @@ public class Caveat {
 		return str;
 	}
 
-	public Object getOperation() {
+	public String getOperation() {
 		return operation;
 	}
+	@XmlElement
 	public void setOperation(String operation) {
 		this.operation = operation;
 	}
@@ -79,6 +82,7 @@ public class Caveat {
 	public String getPredicate() {
 		return predicate;
 	}
+	@XmlElement
 	public void setPredicate(String predicate) {
 		this.predicate = predicate;
 	}

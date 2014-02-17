@@ -31,9 +31,7 @@ import com.jcraft.jsch.SftpException;
 
 public class HelloController {
 	
-	byte[] b;
- 
-	
+
 	@RequestMapping(value = "/welcome", method = RequestMethod.GET)
 	public String printWelcome(ModelMap model, Principal principal) {
  
@@ -43,36 +41,5 @@ public class HelloController {
 		return "hello";
  
 	}
-	
-	
-	
-
-	
-//	@RequestMapping(value = "/displayResult", method = RequestMethod.GET)
-//	public byte[] displayResult(ModelMap model, Principal principal)  {
-// 
-//		/*
-//		RConnection c = new RConnection("129.242.19.118");
-//		RList r = c.eval("source(\"/home/kevin/c.R\")").asList();
-//		REXPRaw b = (REXPRaw) r.get("value");
-//		FileOutputStream fos = new FileOutputStream("c:/users/zhangwei/test.jpg");
-//		fos.write(b.asBytes());
-//        //REXP x = c.eval("R.version.string");
-//        //System.out.println(x.asString());
-//		
-//		model.addAttribute("message", x.asString());
-//		*/
-//		File fi = new File("c:/users/zhangwei/a.jpg");
-//		try {
-//			return (Files.readAllBytes(fi.toPath()));
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-//		
-//	}
-	
-	
  
 }
