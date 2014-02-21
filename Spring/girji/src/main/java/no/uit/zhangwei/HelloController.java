@@ -32,14 +32,6 @@ import com.jcraft.jsch.SftpException;
 public class HelloController {
 	
 
-	@RequestMapping(value = "/welcome", method = RequestMethod.GET)
-	public String printWelcome(ModelMap model, Principal principal) {
- 
-		String name = principal.getName(); //get logged in username
-		String message = "Hello " + name + ", Welcome to Girji!";
-		model.addAttribute("message", message);
-		return "hello";
- 
-	}
+	
  
 }

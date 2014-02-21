@@ -22,7 +22,7 @@
 	</beans:bean>
 	
 	<beans:bean id="fileValidator" class="no.uit.zhangwei.FileValidator" />
-	
+	<beans:bean id="girjiService" class="no.uit.zhangwei.Service.GirjiService" />
 	<beans:bean id="multipartResolver"  
   		class="org.springframework.web.multipart.commons.CommonsMultipartResolver" /> 
 	

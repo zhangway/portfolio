@@ -3,20 +3,14 @@
 
 <html>
 <head>
-<script type="text/javascript" src="jquery-1.2.6.min.js"></script>
-<title>Create A Capability</title>
+
+<title>New Capability</title>
 </head>
 <body>
-	<h1>Create a cap</h1>
-	<form:form method="post" enctype="multipart/form-data"
-		modelAttribute="uploadedFile" action="fileUpload.htm">
+	<h1>${message} New Capability</h1>
+	<form:form method="post" enctype="multipart/form-data" action="capNew.htm">
 		<table>
-			<tr>
-				<td>Upload R Source File:</td>
-				<td><input type="file" name="file" /></td>
-				<td style="color: red; font-style: italic;"><form:errors
-						path="file" /></td>
-			</tr>
+			
 			<tr>
 				<td>Name</td>
 				<td><input type="text" name="name" /></td>
@@ -28,13 +22,18 @@
 				<td></td>
 			</tr>
 			<tr>
+				<td>Code Ref</td>
+				<td><input type="text" name="codeRef" /></td>
+				<td></td>
+			</tr>
+			<tr>
 				<td>AccessPeriod</td>
 				<td><input type="text" name="accessPeriod" /></td>
 				<td></td>
 			</tr>
 			<tr>
 				<td></td>
-				<td><input type="submit" value="Upload" /></td>
+				<td><input type="submit" value="Create" /></td>
 				<td></td>
 			</tr>
 		</table>

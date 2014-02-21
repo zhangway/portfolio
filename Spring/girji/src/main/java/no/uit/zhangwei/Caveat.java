@@ -19,6 +19,12 @@ public class Caveat {
 		this.predicate = predicate;
 	}
 	
+	public Caveat(String codeRef){
+		
+		this.codeRef = codeRef;
+		
+	}
+	
 	public Caveat(){
 		
 	}
