@@ -11,19 +11,20 @@
 	<form:form method="post" enctype="multipart/form-data"  
    modelAttribute="uploadedFile" action="capUploaded.htm">  
    <table>  
-    <tr>  
-     <td>Import your capability file: </td>  
-     <td><input type="file" name="file" />  
-     </td>  
-     <td style="color: red; font-style: italic;"><form:errors  
-       path="file" />  
-     </td>  
+    <tr> 
+
+	     <td>Import your capability file: </td>  
+	     <td><input type="file" name="file" /> </td>  
+	     <td style="color: red; font-style: italic;"><form:errors  
+	       path="file" /></td>  
     </tr>  
-    <tr>  
-     <td> </td>  
-     <td><input type="submit" value="Execute" />  
-     </td>  
-     <td> </td>  
+    
+   
+    <tr>
+    	<td></td>
+     	<td><input type="submit" value="Execute" /></td> 
+	 	<td></td>   
+    
     </tr>  
    </table> 
     

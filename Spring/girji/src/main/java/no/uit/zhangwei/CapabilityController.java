@@ -329,7 +329,7 @@ public class CapabilityController {
 	
 	@RequestMapping("/capUploaded")
 	public String capUpload(
-			@ModelAttribute("uploadedFile") UploadedFile uploadedFile,
+			@ModelAttribute("uploadedFile") UploadedFile uploadedFile, @RequestParam("delegate") String delegate,
 			BindingResult result, Principal principal, ModelMap model) throws ClientProtocolException, IOException {
 		Capability a = null;
 		String jpgName = null;
@@ -337,6 +337,7 @@ public class CapabilityController {
 		String workingDir = System.getProperty("user.dir");
 		REXPRaw b = null;
 		REXP re = null;
+		System.out.println("delegate: " + delegate);
 		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
 		try {
 
@@ -461,8 +462,44 @@ public class CapabilityController {
 		return "redirect:/mycapabilities";
 		
 	}
-
 	
+	@RequestMapping("/delegatecap")
+	public String delegate(Principal principal, ModelMap model){
+		String name = principal.getName(); // get logged in username
+
+		model.addAttribute("name", name);
+
+		return "delegateChooseCap";
+	}
+	@RequestMapping("/delegatecapUploaded")
+	public String delegateUploaded(
+			@ModelAttribute("uploadedFile") UploadedFile uploadedFile,
+			@RequestParam("description") String description,
+			@RequestParam("name") String capName,
+			@RequestParam("codeRef") String codeRef,
+			@RequestParam("accessPeriod") String accessPeriod,
+			BindingResult result, Principal principal) {
+		InputStream inputStream = null;
+		OutputStream outputStream = null;
+
+		String name = principal.getName(); // get logged in username
+		MultipartFile file = uploadedFile.getFile();
+		fileValidator.validate(uploadedFile, result);
+
+		String fileName = file.getOriginalFilename();
+		String fullPath = null;
+
+		if (result.hasErrors()) {
+			// return new ModelAndView("uploadForm");
+			return "delegationChooseCap";
+		}
+		//read the uploaded file
+		//create a new cap, add one more caveat
+		//generate xml file
+		//display file download page
+		return "hello";
+	}
+			
 	@RequestMapping("/fileUpload")
 	public String fileUploaded(
 			@ModelAttribute("uploadedFile") UploadedFile uploadedFile,

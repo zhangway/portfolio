@@ -25,6 +25,10 @@
 	<a href="<c:url value="/createcap"/>">Create A Capability</a>
 	</p>
 	
+	<p>
+	<a href="<c:url value="/delegatecap"/>">Delegate A Capability</a>
+	</p>
+	
 	
 	
 	<p>
