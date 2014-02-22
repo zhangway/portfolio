@@ -2,7 +2,7 @@
 <%@ page session="false" %>
 <html>
 <head>
-	<title>Execution Result</title>
+	<title>Result</title>
 </head>
 <body>
 

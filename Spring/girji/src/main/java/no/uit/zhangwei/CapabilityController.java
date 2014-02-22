@@ -66,6 +66,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
+import com.rits.cloning.Cloner;
 @Lazy
 @Controller
 public class CapabilityController {
@@ -120,14 +121,25 @@ public class CapabilityController {
 	}
 	
 	@RequestMapping(value = "/getrunkeepercap", method = RequestMethod.GET)
-	public String getRunkeeperCap(ModelMap model, Principal principal) throws InvalidKeyException, SignatureException, NoSuchAlgorithmException  {
+	public String getRunkeeperCap(ModelMap model, Principal principal)  {
 
 		String name = principal.getName(); // get logged in username
 		//create a cap with root item
 		Capability cap = null;
 		cap = new Capability();
 		
-		cap.addCaveat("RUNKEEPER_FITNESSACTIVITY", null);
+		try {
+			cap.addCaveat("RUNKEEPER_FITNESSACTIVITY", null);
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		cap.setName(name + "'s runkeeper fitnessactivity");
 		cap.setDescription("user's runkeeper data");
 		String capName = name + "_runkeeper";
@@ -189,7 +201,7 @@ public class CapabilityController {
 	
 
 	@RequestMapping(value = "/gettoken", method = RequestMethod.POST)
-	public String retrieve(@RequestParam("code") String code, Model model, Principal principal) throws ParseException, IOException {
+	public String retrieve(@RequestParam("code") String code, Model model, Principal principal){
 
 		System.out.println("retrieve code: " + code);
 		String token = convertToken(code, "d2831aa1942f4f33ae2ce5dcb86d7e91",
@@ -329,15 +341,15 @@ public class CapabilityController {
 	
 	@RequestMapping("/capUploaded")
 	public String capUpload(
-			@ModelAttribute("uploadedFile") UploadedFile uploadedFile, @RequestParam("delegate") String delegate,
-			BindingResult result, Principal principal, ModelMap model) throws ClientProtocolException, IOException {
+			@ModelAttribute("uploadedFile") UploadedFile uploadedFile, 
+			BindingResult result, Principal principal, ModelMap model) {
 		Capability a = null;
 		String jpgName = null;
 		String RCodePath = null;
 		String workingDir = System.getProperty("user.dir");
 		REXPRaw b = null;
 		REXP re = null;
-		System.out.println("delegate: " + delegate);
+		
 		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
 		try {
 
@@ -401,7 +413,16 @@ public class CapabilityController {
 				} else {
 					resultList = this.girjiService.execute(filePath, codeRef);
 				}
-				filePath = this.girjiService.getFile(filePath, resultList);
+				try {
+					filePath = this.girjiService.getFile(filePath, resultList);
+				} catch (ClientProtocolException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 
 			}
 		}
@@ -477,7 +498,7 @@ public class CapabilityController {
 			@RequestParam("description") String description,
 			@RequestParam("name") String capName,
 			@RequestParam("codeRef") String codeRef,
-			@RequestParam("accessPeriod") String accessPeriod,
+			@RequestParam("accessPeriod") String accessPeriod,ModelMap model,
 			BindingResult result, Principal principal) {
 		InputStream inputStream = null;
 		OutputStream outputStream = null;
@@ -494,10 +515,92 @@ public class CapabilityController {
 			return "delegationChooseCap";
 		}
 		//read the uploaded file
+		Capability a = null;
+		try {
+
+			// File file = new File("C:\\file.xml");
+
+			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
+
+			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+			a = (Capability) jaxbUnmarshaller.unmarshal(uploadedFile.getFile()
+					.getInputStream());
+			// System.out.println(a);
+
+		} catch (JAXBException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//check signature
+		String sig = null;
+		String key = null;
+		for (int i = 0; i < a.getCaveats().size(); i++) {
+			if (i == 0) {
+				sig = "123456";
+			}
+			try {
+				sig = HMACSha1Signature.calculateRFC2104HMAC(a.getCaveats()
+						.get(i).toString(), sig);
+			} catch (InvalidKeyException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SignatureException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		if (sig.equals(a.getSignature())) {
+			System.out.println("validated");
+		} else {
+			System.out.println("signature tampered");
+		}
 		//create a new cap, add one more caveat
+		Cloner cloner=new Cloner();
+
+		Capability delegatedCap =cloner.deepClone(a);
+		// clone is a deep-clone of o
+		delegatedCap.setName(capName);
+		delegatedCap.setDescription(description);
+		try {
+			delegatedCap.addCaveat(codeRef, accessPeriod);
+		} catch (InvalidKeyException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (SignatureException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (NoSuchAlgorithmException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		//generate xml file
+		String workingDir = System.getProperty("user.dir");
+		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
+		String capabilityFullPath = workingDir + "\\" + capName + ".xml";
+		try {
+
+			File file2 = new File(capabilityFullPath);
+			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
+			Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+
+			// output pretty printed
+			jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+
+			jaxbMarshaller.marshal(delegatedCap, file2);
+			jaxbMarshaller.marshal(delegatedCap, System.out);
+
+		} catch (JAXBException e) {
+			e.printStackTrace();
+		}
 		//display file download page
-		return "hello";
+		model.addAttribute("filePath", capName+".xml" );
+		return "result";
 	}
 			
 	@RequestMapping("/fileUpload")

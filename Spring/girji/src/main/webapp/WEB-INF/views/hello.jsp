@@ -17,10 +17,7 @@
 	<a href="<c:url value="/test"/>">test</a>
 	</p>
 	
-	<p>
-	<a href="<c:url value="/opencpu"/>">OpenCPU</a>
-	</p>
-	
+
 	<p>
 	<a href="<c:url value="/createcap"/>">Create A Capability</a>
 	</p>
@@ -28,11 +25,6 @@
 	<p>
 	<a href="<c:url value="/delegatecap"/>">Delegate A Capability</a>
 	</p>
-	
-	
-	
-	<p>
-	<a href="<c:url value="/getrunkeepercap"/>">Get Uer's Runkeeper Capability</a>
-	</p>
+
 </body>
 </html>

@@ -24,6 +24,12 @@ public class Caveat {
 		this.codeRef = codeRef;
 		
 	}
+public Caveat(String codeRef, String predicate){
+		
+		this.codeRef = codeRef;
+		this.predicate = predicate;
+		
+	}
 	
 	public Caveat(){
 		
@@ -41,18 +47,11 @@ public class Caveat {
 
 	public String toString(){
 		String str = "";
-		if(this.input != null){
-			str = str + this.input.toString();
-		}
+		
 		if(this.codeRef != null){
 			str = str + this.codeRef;
 		}
-		if(this.output != null){
-			str = str + this.output;
-		}
-		if(this.operation != null){
-			str = str + this.operation;
-		}
+		
 		if(this.predicate != null){
 			str = str + this.predicate;
 		}
@@ -63,7 +62,7 @@ public class Caveat {
 	public String getOperation() {
 		return operation;
 	}
-	@XmlElement
+	
 	public void setOperation(String operation) {
 		this.operation = operation;
 	}
@@ -76,6 +75,7 @@ public class Caveat {
 	public String getCodeRef() {
 		return codeRef;
 	}
+	@XmlElement
 	public void setCodeRef(String codeRef) {
 		this.codeRef = codeRef;
 	}

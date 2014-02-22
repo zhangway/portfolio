@@ -83,7 +83,7 @@ public class Capability {
 		Caveat caveat = new Caveat();
 		
 
-		caveat.setOperation("read, write, delete");
+		//caveat.setOperation("read, write, delete");
 		caveat.setCodeRef(codeRef);
 		caveat.setPredicate(predicate);
 		this.caveats.add(caveat);
@@ -98,7 +98,7 @@ public class Capability {
 		Caveat e = new Caveat(null, codeRef, predicate);
 		this.caveats.add(e);
 		for(int i = 0; i < caveats.size(); i++){
-			if(this.signature == null){
+			if(i == 0){
 				this.signature = HMACSha1Signature.calculateRFC2104HMAC(this.caveats.get(i).toString(), "123456");
 			}else{
 				this.signature = HMACSha1Signature.calculateRFC2104HMAC(this.caveats.get(i).toString(), this.signature);
