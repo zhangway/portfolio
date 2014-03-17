@@ -83,15 +83,27 @@ public class GirjiService {
 	
 	public String getFile(String file, ArrayList<String> result) throws ClientProtocolException, IOException{
 		HttpClient httpClient = HttpClientBuilder.create().build();
-		String s = result.get(4);
-		String f = s.substring(s.lastIndexOf('/')+1);
-		String filePath;
-		if(file.equalsIgnoreCase(f)){
-			filePath = result.get(5);
-		}else{
-			filePath = result.get(4);
+		ArrayList<String> files = new ArrayList<String>();
+		for(String s:result){
+			if(s.contains("files")){
+				files.add(s);
+			}
 		}
+		String ss = null;
+		int size = files.size();
 		
+		String f = s.substring(s.lastIndexOf('/')+1);
+		String filePath = null;
+		for(int i = 0; i < files.size(); i++){
+			s = 
+			String f = s.substring(s.lastIndexOf('/')+1);
+		
+			if(files.get(i).equalsIgnoreCase(f)){
+				filePath = files.get(files.size()-1-i);
+			}else{
+				filePath = result.get(i);
+			}
+		}
 		String url = OPENCPU_SERVER + filePath;
 
 		HttpGet request = new HttpGet(url);
