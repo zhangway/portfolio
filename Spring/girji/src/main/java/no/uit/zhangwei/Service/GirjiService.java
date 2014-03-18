@@ -90,18 +90,16 @@ public class GirjiService {
 			}
 		}
 		String ss = null;
+		String f = null;
 		int size = files.size();
 		
-		String f = s.substring(s.lastIndexOf('/')+1);
 		String filePath = null;
 		for(int i = 0; i < files.size(); i++){
-			s = 
-			String f = s.substring(s.lastIndexOf('/')+1);
+			ss = files.get(i);
+			f = ss.substring(ss.lastIndexOf('/')+1);
 		
-			if(files.get(i).equalsIgnoreCase(f)){
-				filePath = files.get(files.size()-1-i);
-			}else{
-				filePath = result.get(i);
+			if(!f.equalsIgnoreCase(file)){
+				filePath = ss;
 			}
 		}
 		String url = OPENCPU_SERVER + filePath;
@@ -110,7 +108,15 @@ public class GirjiService {
 
 		// add request header
 		request.addHeader("User-Agent", "girji");
+		
+		long t1=System.currentTimeMillis();                     
+        
+         
 		HttpResponse response = httpClient.execute(request);
+		
+		long t=System.currentTimeMillis()-t1;
+		
+		System.out.println("get file latency: " + t);
 
 		System.out.println("Response Code : "
 				+ response.getStatusLine().getStatusCode());
@@ -142,13 +148,14 @@ public class GirjiService {
 		post.setEntity(yourEntity);
 		System.out.println("Post parameters : " + post.getEntity());
 		HttpResponse response = null;
-		Long startTime;
-		Long endTime;
+		long startTime = 0;
+		long endTime;
+		
 		try {
 			startTime = System.currentTimeMillis();
 			response = client.execute(post);
 			endTime = System.currentTimeMillis();
-			System.out.println(" :: time elapsed :: "
+			System.out.println(" :: data file upload latency :: "
 					+ (endTime - startTime));
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
@@ -158,7 +165,8 @@ public class GirjiService {
 			e.printStackTrace();
 		}
 		int responseCode = response.getStatusLine().getStatusCode();
-		
+		long t=System.currentTimeMillis()-startTime; 
+		System.out.println(" :: cap execution latency :: " + t);
 		System.out.println("Response Code : "
 				+ responseCode);
 		
@@ -205,8 +213,14 @@ public class GirjiService {
 		post.setEntity(yourEntity);
 		System.out.println("Post parameters : " + post.getEntity());
 		HttpResponse response = null;
+		long startTime = 0;
+		long endTime;
 		try {
+			startTime = System.currentTimeMillis();
 			response = client.execute(post);
+			endTime = System.currentTimeMillis();
+			System.out.println(" :: data file upload latency :: "
+					+ (endTime - startTime));
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

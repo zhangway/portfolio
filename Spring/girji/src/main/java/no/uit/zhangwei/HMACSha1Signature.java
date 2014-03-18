@@ -10,6 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class HMACSha1Signature {
 	
 	private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
+	//private static final String HMAC_SHA1_ALGORITHM = "HmacSHA256";
 
 	public static String calculateRFC2104HMAC(String data, String key)
 			throws SignatureException, NoSuchAlgorithmException,

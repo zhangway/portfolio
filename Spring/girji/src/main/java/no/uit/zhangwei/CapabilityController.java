@@ -349,7 +349,7 @@ public class CapabilityController {
 		String workingDir = System.getProperty("user.dir");
 		REXPRaw b = null;
 		REXP re = null;
-		
+		String capFileName = uploadedFile.getFile().getOriginalFilename();
 		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
 		try {
 
@@ -407,9 +407,15 @@ public class CapabilityController {
 			if (ca.getCodeRef() != null) {
 				codeRef = ca.getCodeRef();
 				if (j == 0) {
+					if(capFileName.equals("test.xml")){
+						filePath = "runkeeper.csv";
+						resultList = this.girjiService.execute(filePath, codeRef);
+						
+					}else{
 					filePath = "runkeeper.csv";
 					
 					resultList = this.girjiService.execute(filePath, name, codeRef);
+					}
 				} else {
 					resultList = this.girjiService.execute(filePath, codeRef);
 				}
