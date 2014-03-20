@@ -45,7 +45,7 @@ public class Capability {
 				caveat.setCodeRef(codeRef);
 				this.caveats.add(caveat);
 				//strCaveat = this.caveats.get(i).toString();
-				sigRoot = HMACSha1Signature
+				sigRoot = HMACSignature
 						.calculateRFC2104HMAC(this.caveats
 								.get(i).toString(), "123456");
 			} else {
@@ -53,7 +53,7 @@ public class Capability {
 				caveat.setCodeRef(codeRef);
 				this.caveats.add(caveat);
 
-				this.signature = HMACSha1Signature.calculateRFC2104HMAC(this.caveats
+				this.signature = HMACSignature.calculateRFC2104HMAC(this.caveats
 						.get(i).toString(), sigRoot);
 			}
 
@@ -61,7 +61,7 @@ public class Capability {
 		Caveat e = new Caveat(input, codeRef, predicate);
 		this.caveats.add(e);
 		for (int j = 2; j < this.caveats.size(); j++) {
-			this.signature = HMACSha1Signature.calculateRFC2104HMAC(caveats
+			this.signature = HMACSignature.calculateRFC2104HMAC(caveats
 					.get(j).toString(), this.signature);
 		}
 		
@@ -88,7 +88,7 @@ public class Capability {
 		caveat.setPredicate(predicate);
 		this.caveats.add(caveat);
 		long t1=System.currentTimeMillis();  
-		this.signature = HMACSha1Signature.calculateRFC2104HMAC(caveat.toString(), "123456");
+		this.signature = HMACSignature.calculateRFC2104HMAC(caveat.toString(), "123456");
 		long t=System.currentTimeMillis()-t1; 
 		System.out.println("HMAC root caveat latency: " + t);
 
@@ -101,10 +101,10 @@ public class Capability {
 		for(int i = 0; i < caveats.size(); i++){
 			long t1=System.currentTimeMillis(); 
 			if(i == 0){
-				this.signature = HMACSha1Signature.calculateRFC2104HMAC(this.caveats.get(i).toString(), "123456");
+				this.signature = HMACSignature.calculateRFC2104HMAC(this.caveats.get(i).toString(), "123456");
 			}else{
 				
-				this.signature = HMACSha1Signature.calculateRFC2104HMAC(this.caveats.get(i).toString(), this.signature);
+				this.signature = HMACSignature.calculateRFC2104HMAC(this.caveats.get(i).toString(), this.signature);
 				
 			}
 			long t=System.currentTimeMillis()-t1; 

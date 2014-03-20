@@ -13,10 +13,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.SignatureException;
 import java.sql.Timestamp;
+import java.text.DateFormat;
 import java.text.Format;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -376,7 +378,7 @@ public class CapabilityController {
 				sig = "123456";
 			}
 			try {
-				sig = HMACSha1Signature.calculateRFC2104HMAC(a.getCaveats()
+				sig = HMACSignature.calculateRFC2104HMAC(a.getCaveats()
 						.get(i).toString(), sig);
 			} catch (InvalidKeyException e) {
 				// TODO Auto-generated catch block
@@ -547,7 +549,7 @@ public class CapabilityController {
 				sig = "123456";
 			}
 			try {
-				sig = HMACSha1Signature.calculateRFC2104HMAC(a.getCaveats()
+				sig = HMACSignature.calculateRFC2104HMAC(a.getCaveats()
 						.get(i).toString(), sig);
 			} catch (InvalidKeyException e) {
 				// TODO Auto-generated catch block
@@ -712,6 +714,174 @@ public class CapabilityController {
 		//this.capabilities.add(cap);
 		
 		return "redirect:/mycapabilities";
+		
+	}
+	
+	@RequestMapping(value = "/test", method = RequestMethod.GET)
+	public String test(ModelMap model, Principal principal) {
+
+		String name = principal.getName(); // get logged in username
+		
+		//execute the same capability file. The data files are different
+		
+		Capability a = null;
+		String jpgName = null;
+		String RCodePath = null;
+		String workingDir = System.getProperty("user.dir");
+		REXPRaw b = null;
+		REXP re = null;
+		File capFile = new File(workingDir+"\\test1.xml");
+		
+		//File file = new File("C:\\file.xml");
+		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
+		try {
+
+			// File file = new File("C:\\file.xml");
+
+			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
+
+			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+			a = (Capability) jaxbUnmarshaller.unmarshal(new FileInputStream(capFile));
+			// System.out.println(a);
+
+		} catch (JAXBException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		String sig = null;
+		String key = null;
+		for (int i = 0; i < a.getCaveats().size(); i++) {
+			if (i == 0) {
+				sig = "123456";
+			}
+			try {
+				sig = HMACSignature.calculateRFC2104HMAC(a.getCaveats()
+						.get(i).toString(), sig);
+			} catch (InvalidKeyException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SignatureException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		if (sig.equals(a.getSignature())) {
+			System.out.println("validated");
+		} else {
+			System.out.println("signature tampered");
+		}
+		ArrayList<Caveat> caveats = a.getCaveats();
+		Caveat ca = null;
+		String filePath = null;
+		String codeRef = null;
+		ArrayList<String> resultList = null;
+		String filename;
+		DateFormat dateFormat = new SimpleDateFormat("MM/dd HH:mm:ss");
+		Date date = new Date();
+		
+		long uploadTime, downloadTime = 0;
+		// System.out.println(dateFormat.format(cal.getTime()));
+		FileWriter writer = null;
+
+		try {
+			writer = new FileWriter(workingDir +"\\measurement2.csv");
+
+			writer.append("Time");
+			writer.append(',');
+			writer.append("Number of Points");
+			writer.append(',');
+			writer.append("Number of Policy items");
+			writer.append(',');
+			writer.append("Execution Time1");
+			writer.append(',');
+			writer.append("Download Time1");
+			writer.append(',');
+			writer.append("Execution Time2");
+			writer.append(',');
+			writer.append("Download Time2");
+			writer.append(',');
+			writer.append("Execution Time3");
+			writer.append(',');
+			writer.append("Download Time3");
+			writer.append('\n');
+
+			while (true) {
+				for (int k = 1000; k <= 10000; k += 1000) {
+					
+					writer.append(dateFormat.format(Calendar.getInstance()
+							.getTime()));
+					writer.append(',');
+					writer.append(Integer.toString(k));
+					writer.append(',');
+					
+					
+					int size = caveats.size();
+					// execute the capability chain from root item
+					for (int j = 0; j < size; j++) {
+						writer.append(Integer.toString(size));
+						writer.append(',');						
+						
+						ca = caveats.get(j);
+						if (ca.getCodeRef() != null) {
+							codeRef = ca.getCodeRef();
+							if(j == 0){
+								filePath = "runkeeper" + "_" + k + ".csv";
+								if(size == 1){
+									resultList = this.girjiService.execute(filePath, codeRef);
+								}else{
+									resultList = this.girjiService.execute(filePath, name, codeRef);
+								}
+							}else{
+								resultList = this.girjiService.execute(filePath, codeRef);
+							}
+							writer.append(Long.toString(this.girjiService.uploadTime));
+							writer.append(',');
+							try {
+								filePath = this.girjiService.getFile(filePath,
+										resultList, k, j);
+							} catch (ClientProtocolException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							writer.append(Long.toString(this.girjiService.downloadTime));
+
+						}
+					}
+					
+					writer.append('\n');
+					writer.flush();
+					
+				}
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				writer.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		
+
+			
+		model.addAttribute("filePath", filePath );
+		
+		return "result";
+
 		
 	}
 

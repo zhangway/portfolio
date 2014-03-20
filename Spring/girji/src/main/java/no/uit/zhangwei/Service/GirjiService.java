@@ -6,9 +6,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import no.uit.zhangwei.Capability;
+import no.uit.zhangwei.User;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -20,15 +24,15 @@ import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.HttpClientBuilder;
-
-import no.uit.zhangwei.Capability;
-import no.uit.zhangwei.User;
+import org.apache.http.util.EntityUtils;
 
 public class GirjiService {
 	
 	static final String OPENCPU_SERVER = "http://129.242.19.118";
 	private ArrayList<Capability> capabilities;
 	private HashMap<String, User> userMap;
+	public long uploadTime;
+	public long downloadTime;
 	
 	public GirjiService(){
 		this.capabilities = new ArrayList<Capability>();
@@ -81,6 +85,76 @@ public class GirjiService {
 		return cap;
 	}
 	
+	public String getFile(String file, ArrayList<String> result, int number, int j) throws ClientProtocolException, IOException{
+		HttpClient httpClient = HttpClientBuilder.create().build();
+		ArrayList<String> files = new ArrayList<String>();
+		for(String s:result){
+			if(s.contains("files")){
+				files.add(s);
+			}
+		}
+		String ss = null;
+		String f = null;
+		int size = files.size();
+		
+		String filePath = null;
+		for(int i = 0; i < files.size(); i++){
+			ss = files.get(i);
+			f = ss.substring(ss.lastIndexOf('/')+1);
+		
+			if(!f.equalsIgnoreCase(file)){
+				filePath = ss;
+			}
+		}
+		
+		
+		String url = OPENCPU_SERVER + filePath;
+
+		HttpGet request = new HttpGet(url);
+
+		// add request header
+		request.addHeader("User-Agent", "girji");
+		
+		long t1=System.currentTimeMillis();                     
+        
+         
+		HttpResponse response = httpClient.execute(request);
+		
+		long t=System.currentTimeMillis()-t1;
+		this.downloadTime = t;
+		
+		System.out.println("get file latency: " + t);
+
+		System.out.println("Response Code : "
+				+ response.getStatusLine().getStatusCode());
+		
+		String responseString = EntityUtils.toString(response.getEntity(), "UTF-8");
+		//System.out.println(responseString);
+		
+		
+
+		//BufferedInputStream bis = new BufferedInputStream(response.getEntity().getContent());
+		//System.out.println(bis.available());
+		String fileName = filePath.substring(filePath.lastIndexOf('/')+1);
+		if(j == 3){
+			fileName = fileName + number;
+		}
+		FileOutputStream fos = new FileOutputStream(new File(fileName));
+		byte[] contentInBytes = responseString.getBytes();
+		fos.write(contentInBytes);
+		fos.flush();
+		fos.close();
+		/*
+		int inByte = bis.read();
+		while(inByte != -1) {
+			bos.write(inByte);
+		}
+		bis.close();
+		bos.close();
+		*/
+		return fileName;
+	}
+	
 	public String getFile(String file, ArrayList<String> result) throws ClientProtocolException, IOException{
 		HttpClient httpClient = HttpClientBuilder.create().build();
 		ArrayList<String> files = new ArrayList<String>();
@@ -102,6 +176,8 @@ public class GirjiService {
 				filePath = ss;
 			}
 		}
+		
+		
 		String url = OPENCPU_SERVER + filePath;
 
 		HttpGet request = new HttpGet(url);
@@ -123,6 +199,7 @@ public class GirjiService {
 
 		BufferedInputStream bis = new BufferedInputStream(response.getEntity().getContent());
 		String fileName = filePath.substring(filePath.lastIndexOf('/')+1);
+		
 		BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(fileName)));
 		int inByte;
 		while((inByte = bis.read()) != -1) bos.write(inByte);
@@ -146,7 +223,7 @@ public class GirjiService {
 		entityBuilder.addTextBody("user", user);
 		final HttpEntity yourEntity = entityBuilder.build();
 		post.setEntity(yourEntity);
-		System.out.println("Post parameters : " + post.getEntity());
+		System.out.println("Post parameters : " + url);
 		HttpResponse response = null;
 		long startTime = 0;
 		long endTime;
@@ -157,6 +234,7 @@ public class GirjiService {
 			endTime = System.currentTimeMillis();
 			System.out.println(" :: data file upload latency :: "
 					+ (endTime - startTime));
+			this.uploadTime = endTime - startTime;
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -211,7 +289,7 @@ public class GirjiService {
 		
 		final HttpEntity yourEntity = entityBuilder.build();
 		post.setEntity(yourEntity);
-		System.out.println("Post parameters : " + post.getEntity());
+		System.out.println("Post parameters : " + url);
 		HttpResponse response = null;
 		long startTime = 0;
 		long endTime;
@@ -221,6 +299,7 @@ public class GirjiService {
 			endTime = System.currentTimeMillis();
 			System.out.println(" :: data file upload latency :: "
 					+ (endTime - startTime));
+			this.uploadTime = endTime - startTime;
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
