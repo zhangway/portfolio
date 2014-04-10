@@ -17,6 +17,12 @@
 	<a href="<c:url value="/test"/>">test</a>
 	</p>
 	
+	
+	
+	<p>
+	<a href="<c:url value="/register"/>">Register a service</a>
+	</p>
+	
 
 	<p>
 	<a href="<c:url value="/createcap"/>">Create A Capability</a>

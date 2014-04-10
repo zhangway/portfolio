@@ -18,6 +18,7 @@ import java.text.Format;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -69,6 +70,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 import com.rits.cloning.Cloner;
+
 @Lazy
 @Controller
 public class CapabilityController {
@@ -104,6 +106,120 @@ public class CapabilityController {
  
 	}
 	
+
+	
+	@RequestMapping(value = "/register", method = RequestMethod.GET)
+	public String registerService(ModelMap model, Principal principal) {
+ 
+		return "register";
+ 
+	}
+	
+	@RequestMapping("/registerForm")
+	public String registerForm(@RequestParam("name") String name, @RequestParam("description") String description, 
+			@RequestParam("codeRef") String[] codeRef, @RequestParam("param") String[] param, ModelMap model,Principal principal) {
+	    
+		// Processing
+		String provider = principal.getName(); // get logged in username
+		ConsentRequest cro = new ConsentRequest(provider, name, description);
+		cro.setOperations(codeRef, param);
+		this.girjiService.addCRO(cro);
+		
+		model.addAttribute("reqView", this.girjiService.getCROList());
+		
+		return "reqList";
+		
+		
+	}
+	
+	@RequestMapping("/choose")
+	public String choose(@RequestParam("radio") String value, Model model){
+		
+		//String value = request.getParameter("radio"); 
+		
+		System.out.println(value);
+		
+		ConsentRequest view = null;
+		
+		int size = this.girjiService.getCROList().size();
+		
+		for(int i = 0; i < size; i++){
+			ConsentRequest v = this.girjiService.getCROList().get(i);
+			if(v.getName().equals(value)){
+				view = v;
+			}
+		}
+		
+		model.addAttribute("reqView", view);
+		
+		
+		return "next";
+	}
+	
+	@RequestMapping("/finish")
+	public String consent(@RequestParam("accessPeriod") String accessPeriod, 
+						  @RequestParam("allow") String allowDelegation, 
+						  @RequestParam("name") String name, 
+						  Model model,  Principal principal){
+		
+		System.out.println(accessPeriod);
+		System.out.println(allowDelegation);
+		System.out.println(name);
+		
+		ArrayList<Operation> o = null;
+		ConsentRequest req = null;
+		int size = this.girjiService.getCROList().size();
+		for(int i = 0; i < size; i++){
+			req = this.girjiService.getCROList().get(i);
+			if(req.getName().equals(name)){
+				 o = req.getOperations();
+			}
+		}
+		
+		//create a code consent object
+		CodeConsent cc = new CodeConsent();
+		cc.setName(name);
+		cc.setDescription(req.getDescription());
+		cc.setDataOwnerId(principal.getName());
+		cc.setPrincipalId(principal.getName());	
+		cc.setRevoked(false);
+		cc.setOperations(o);
+		cc.setConstraints(accessPeriod, allowDelegation);
+		
+		//a capability is derived from the code consent object		
+		Capability cap = new Capability(cc);
+		this.girjiService.addCap(cap, cap.getRequester());
+		
+		//generate the xml file		
+		generateXML(cap);	
+		
+		String message = "Hello " + principal.getName() + ", Welcome to Girji!";
+		model.addAttribute("message", message);
+		return "hello";
+		
+	}
+	
+	private void generateXML(Capability cap){
+		String workingDir = System.getProperty("user.dir");
+
+		String capabilityFullPath = workingDir + "\\" + cap.getName() + ".xml";
+		try {
+
+			File file2 = new File(capabilityFullPath);
+			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
+			Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+
+			// output pretty printed
+			jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+
+			jaxbMarshaller.marshal(cap, file2);
+			jaxbMarshaller.marshal(cap, System.out);
+
+		} catch (JAXBException ex) {
+			ex.printStackTrace();
+		}
+	}
+	
 	
 	@RequestMapping(value = "/mycapabilities", method = RequestMethod.GET)
 	public String myCapabilities(ModelMap model, Principal principal) {
@@ -128,20 +244,7 @@ public class CapabilityController {
 		String name = principal.getName(); // get logged in username
 		//create a cap with root item
 		Capability cap = null;
-		cap = new Capability();
-		
-		try {
-			cap.addCaveat("RUNKEEPER_FITNESSACTIVITY", null);
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SignatureException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+
 		cap.setName(name + "'s runkeeper fitnessactivity");
 		cap.setDescription("user's runkeeper data");
 		String capName = name + "_runkeeper";
@@ -352,10 +455,8 @@ public class CapabilityController {
 		REXPRaw b = null;
 		REXP re = null;
 		String capFileName = uploadedFile.getFile().getOriginalFilename();
-		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
-		try {
 
-			// File file = new File("C:\\file.xml");
+		try {
 
 			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
 
@@ -373,12 +474,12 @@ public class CapabilityController {
 
 		String sig = null;
 		String key = null;
-		for (int i = 0; i < a.getCaveats().size(); i++) {
+		for (int i = 0; i < a.getPolicies().size(); i++) {
 			if (i == 0) {
 				sig = "123456";
 			}
 			try {
-				sig = HMACSignature.calculateRFC2104HMAC(a.getCaveats()
+				sig = HMACSignature.calculateRFC2104HMAC(a.getPolicies()
 						.get(i).toString(), sig);
 			} catch (InvalidKeyException e) {
 				// TODO Auto-generated catch block
@@ -397,13 +498,23 @@ public class CapabilityController {
 		} else {
 			System.out.println("signature tampered");
 		}
-		ArrayList<Caveat> caveats = a.getCaveats();
-		Caveat ca = null;
+		ArrayList<Policy> policies = a.getPolicies();
+		Policy p = null;
 		String filePath = null;
 		String codeRef = null;
 		ArrayList<String> resultList = null;
+		Operation o = null;
 		String name = principal.getName();
 		//execute the capability chain from root item
+		String file = "fitnessActivity.csv";
+		for (int j = 0; j < policies.size(); j++) {
+			p = policies.get(j);
+			o = p.getOperation();
+			codeRef = o.getCodeRef();
+			resultList = this.girjiService.execute(o, file);
+			file = this.girjiService.getFile(resultList);
+		}
+		/*
 		for (int j = 0; j < caveats.size(); j++) {
 			ca = caveats.get(j);
 			if (ca.getCodeRef() != null) {
@@ -434,7 +545,7 @@ public class CapabilityController {
 
 			}
 		}
-			
+		*/
 		model.addAttribute("filePath", filePath );
 		
 		return "result";
@@ -451,6 +562,7 @@ public class CapabilityController {
 			Principal principal) {
 		String name = principal.getName();
 		Capability cap = null;
+		/*
 		try {
 			cap = new Capability(null, name, codeRef, accessPeriod, false);
 		} catch (InvalidKeyException e) {
@@ -463,6 +575,7 @@ public class CapabilityController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		*/
 		cap.setName(capName);
 		cap.setDescription(description);
 		
@@ -544,12 +657,12 @@ public class CapabilityController {
 		//check signature
 		String sig = null;
 		String key = null;
-		for (int i = 0; i < a.getCaveats().size(); i++) {
+		for (int i = 0; i < a.getPolicies().size(); i++) {
 			if (i == 0) {
 				sig = "123456";
 			}
 			try {
-				sig = HMACSignature.calculateRFC2104HMAC(a.getCaveats()
+				sig = HMACSignature.calculateRFC2104HMAC(a.getPolicies()
 						.get(i).toString(), sig);
 			} catch (InvalidKeyException e) {
 				// TODO Auto-generated catch block
@@ -575,6 +688,7 @@ public class CapabilityController {
 		// clone is a deep-clone of o
 		delegatedCap.setName(capName);
 		delegatedCap.setDescription(description);
+		/*
 		try {
 			delegatedCap.addCaveat(codeRef, accessPeriod);
 		} catch (InvalidKeyException e1) {
@@ -587,6 +701,7 @@ public class CapabilityController {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		*/
 		//generate xml file
 		String workingDir = System.getProperty("user.dir");
 		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
@@ -672,6 +787,7 @@ public class CapabilityController {
 			e.printStackTrace();
 		}
 		Capability cap = null;
+		/*
 		try {
 			cap = new Capability(null, fullName, accessPeriod, false);
 		} catch (InvalidKeyException e) {
@@ -684,6 +800,7 @@ public class CapabilityController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		*/
 		cap.setName(capName);
 		cap.setDescription(description);
 		/*
@@ -753,12 +870,12 @@ public class CapabilityController {
 
 		String sig = null;
 		String key = null;
-		for (int i = 0; i < a.getCaveats().size(); i++) {
+		for (int i = 0; i < a.getPolicies().size(); i++) {
 			if (i == 0) {
 				sig = "123456";
 			}
 			try {
-				sig = HMACSignature.calculateRFC2104HMAC(a.getCaveats()
+				sig = HMACSignature.calculateRFC2104HMAC(a.getPolicies()
 						.get(i).toString(), sig);
 			} catch (InvalidKeyException e) {
 				// TODO Auto-generated catch block
@@ -777,8 +894,8 @@ public class CapabilityController {
 		} else {
 			System.out.println("signature tampered");
 		}
-		ArrayList<Caveat> caveats = a.getCaveats();
-		Caveat ca = null;
+		ArrayList<Policy> caveats = a.getPolicies();
+		Policy ca = null;
 		String filePath = null;
 		String codeRef = null;
 		ArrayList<String> resultList = null;
@@ -824,6 +941,7 @@ public class CapabilityController {
 					
 					int size = caveats.size();
 					// execute the capability chain from root item
+					/*
 					for (int j = 0; j < size; j++) {
 						writer.append(Integer.toString(size));
 						writer.append(',');						
@@ -857,7 +975,7 @@ public class CapabilityController {
 
 						}
 					}
-					
+					*/
 					writer.append('\n');
 					writer.flush();
 					

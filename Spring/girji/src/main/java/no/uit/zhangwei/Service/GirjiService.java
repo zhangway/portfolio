@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +13,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import no.uit.zhangwei.Capability;
+import no.uit.zhangwei.CodeConsent;
+import no.uit.zhangwei.ConsentRequest;
+import no.uit.zhangwei.Operation;
 import no.uit.zhangwei.User;
 
 import org.apache.http.HttpEntity;
@@ -30,13 +34,17 @@ public class GirjiService {
 	
 	static final String OPENCPU_SERVER = "http://129.242.19.118";
 	private ArrayList<Capability> capabilities;
+	private ArrayList<CodeConsent> ccoList;
+	private ArrayList<ConsentRequest> croList;
 	private HashMap<String, User> userMap;
 	public long uploadTime;
 	public long downloadTime;
 	
 	public GirjiService(){
 		this.capabilities = new ArrayList<Capability>();
+		this.croList = new ArrayList<ConsentRequest>();
 		this.userMap = new HashMap<String, User>();
+		this.ccoList = new ArrayList<CodeConsent>();
 	}
 	
 	public User findUser(String name){
@@ -48,12 +56,22 @@ public class GirjiService {
 		
 	}
 	
+	
+	
 	public boolean addUser(String name){
 		User user = new User(name);
 		if(this.userMap.put(name, user) != null){
 			return true;
 		}
 		return false;
+	}
+	
+	public void addCRO(ConsentRequest cro){
+		this.croList.add(cro);
+	}
+	
+	public ArrayList<ConsentRequest> getCROList(){
+		return this.croList;
 	}
 	
 	public ArrayList<Capability> getUserCapLst(String userName){
@@ -153,6 +171,71 @@ public class GirjiService {
 		bos.close();
 		*/
 		return fileName;
+	}
+	
+	public String getFile(ArrayList<String> result){
+		
+		HttpClient httpClient = HttpClientBuilder.create().build();
+	
+		
+		String url = OPENCPU_SERVER + result.get(0);
+
+		HttpGet request = new HttpGet(url);
+
+		// add request header
+		request.addHeader("User-Agent", "girji");
+		
+		long t1=System.currentTimeMillis();                     
+        
+         
+		HttpResponse response = null;
+		try {
+			response = httpClient.execute(request);
+		} catch (ClientProtocolException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		long t=System.currentTimeMillis()-t1;
+		
+		System.out.println("get file latency: " + t);
+
+		System.out.println("Response Code : "
+				+ response.getStatusLine().getStatusCode());
+
+		BufferedInputStream bis = null;
+		try {
+			bis = new BufferedInputStream(response.getEntity().getContent());
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		BufferedOutputStream bos = null;
+		try {
+			bos = new BufferedOutputStream(new FileOutputStream(new File(".val")));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		int inByte;
+		try {
+			while((inByte = bis.read()) != -1) bos.write(inByte);
+			bis.close();
+			bos.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return ".val";
 	}
 	
 	public String getFile(String file, ArrayList<String> result) throws ClientProtocolException, IOException{
@@ -274,10 +357,10 @@ public class GirjiService {
 		return resultList;
 	}
 	
-	public ArrayList<String> execute(String filePath, String codeRef){
+	public ArrayList<String> execute(Operation o, String filePath){
 		HttpClient client = HttpClientBuilder.create().build();
 		
-		String url = OPENCPU_SERVER + codeRef;
+		String url = OPENCPU_SERVER + o.getCodeRef();
 		HttpPost post = new HttpPost(url);
 
 		MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
@@ -287,9 +370,13 @@ public class GirjiService {
 
 		entityBuilder.addPart("file", fb);
 		
+		if(o.getParam() != null){
+			entityBuilder.addTextBody("user", o.getParam());
+		}
 		final HttpEntity yourEntity = entityBuilder.build();
 		post.setEntity(yourEntity);
-		System.out.println("Post parameters : " + url);
+		System.out.println("URL : " + url);
+		System.out.println("Parameter : " + o.getParam());
 		HttpResponse response = null;
 		long startTime = 0;
 		long endTime;
