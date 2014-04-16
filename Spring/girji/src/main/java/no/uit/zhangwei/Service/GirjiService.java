@@ -176,6 +176,14 @@ public class GirjiService {
 	public String getFile(ArrayList<String> result){
 		
 		HttpClient httpClient = HttpClientBuilder.create().build();
+		
+		for(int i = 0; i < result.size(); i++){
+			String s = result.get(i);
+			if(s.contains("files")){
+				
+			}
+		}
+		
 	
 		
 		String url = OPENCPU_SERVER + result.get(0);
@@ -371,12 +379,19 @@ public class GirjiService {
 		entityBuilder.addPart("file", fb);
 		
 		if(o.getParam() != null){
-			entityBuilder.addTextBody("user", o.getParam());
+			if(!o.getParam().equals("")){
+				String param = "'" + o.getParam() + "'";
+				entityBuilder.addTextBody("param", param);
+				System.out.println("Parameter : " + o.getParam());
+			}
 		}
+		
+		
+		
 		final HttpEntity yourEntity = entityBuilder.build();
 		post.setEntity(yourEntity);
 		System.out.println("URL : " + url);
-		System.out.println("Parameter : " + o.getParam());
+		
 		HttpResponse response = null;
 		long startTime = 0;
 		long endTime;

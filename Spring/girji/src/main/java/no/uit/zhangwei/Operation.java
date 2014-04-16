@@ -11,6 +11,8 @@ public class Operation {
 		
 	}
 	
+
+	
 	public String getParam() {
 		return param;
 	}

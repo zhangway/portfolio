@@ -343,10 +343,8 @@ public class CapabilityController {
 		FitnessActivityFeedItemView f = null;	
 		
 		try {
-			dataFilePath = workingDir + "\\runkeeper.csv";
+			dataFilePath = workingDir + "\\fitnessActivity.csv";
 			writer = new FileWriter(dataFilePath);
-			writer.append("user");
-		    writer.append(',');
 			writer.append("date");
 		    writer.append(',');
 		    writer.append("type");
@@ -361,8 +359,6 @@ public class CapabilityController {
 		    Timestamp timeStamp = null;
 		    long t;
 		    for(int j = 0; j < feedItemsView.size(); j++){
-		    	writer.append(user);
-			    writer.append(',');
 		    	f = feedItemsView.get(j);
 		    	String time = f.getStartTime().split(",")[1].trim();
 		    	//System.out.println("time is " + time);
@@ -500,7 +496,7 @@ public class CapabilityController {
 		}
 		ArrayList<Policy> policies = a.getPolicies();
 		Policy p = null;
-		String filePath = null;
+		
 		String codeRef = null;
 		ArrayList<String> resultList = null;
 		Operation o = null;
@@ -512,7 +508,16 @@ public class CapabilityController {
 			o = p.getOperation();
 			codeRef = o.getCodeRef();
 			resultList = this.girjiService.execute(o, file);
-			file = this.girjiService.getFile(resultList);
+			
+			try {
+				file = this.girjiService.getFile(file, resultList);
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		/*
 		for (int j = 0; j < caveats.size(); j++) {
@@ -546,7 +551,7 @@ public class CapabilityController {
 			}
 		}
 		*/
-		model.addAttribute("filePath", filePath );
+		model.addAttribute("filePath", file );
 		
 		return "result";
 
@@ -619,6 +624,7 @@ public class CapabilityController {
 			@RequestParam("description") String description,
 			@RequestParam("name") String capName,
 			@RequestParam("codeRef") String codeRef,
+			@RequestParam("param") String param,
 			@RequestParam("accessPeriod") String accessPeriod,ModelMap model,
 			BindingResult result, Principal principal) {
 		InputStream inputStream = null;
@@ -688,20 +694,14 @@ public class CapabilityController {
 		// clone is a deep-clone of o
 		delegatedCap.setName(capName);
 		delegatedCap.setDescription(description);
-		/*
-		try {
-			delegatedCap.addCaveat(codeRef, accessPeriod);
-		} catch (InvalidKeyException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (SignatureException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (NoSuchAlgorithmException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		*/
+		
+		Operation o = new Operation(codeRef, param);
+		Constraints c = new Constraints(accessPeriod);
+		
+		Policy p = new Policy(o, c);
+		delegatedCap.addPolicy(p);
+		
+		
 		//generate xml file
 		String workingDir = System.getProperty("user.dir");
 		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";

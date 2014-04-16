@@ -62,6 +62,13 @@ public class Capability {
 		return s;
 	}
 
+	public void addPolicy(Policy p){
+		
+		this.policies.add(p);
+		String s = signature(this.signature, p);
+		this.signature = s;
+		
+	}
 
 	/*
 
@@ -205,9 +212,7 @@ public class Capability {
 		this.policies = policies;
 	}
 
-	public ArrayList<Policy> getPolicies() {
-		return this.policies;
-	}
+	
 	@XmlElement
 	public void setSignature(String signature) {
 		this.signature = signature;

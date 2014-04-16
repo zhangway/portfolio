@@ -19,9 +19,19 @@ public class ConsentRequest {
 	
 	public void setOperations(String[] codeRef, String[] param){
 		
+		
+		
 		for(int i = 0; i < codeRef.length; i++){
-			Operation o = new Operation(codeRef[i], param[i]);
-			this.operations.add(o);
+			if(param != null && param.length>0){
+				Operation o = new Operation(codeRef[i], param[i]);
+				this.operations.add(o);
+				
+			}else{
+				Operation o = new Operation(codeRef[i], null);
+				this.operations.add(o);
+			}
+			
+			
 		}
 	}
 

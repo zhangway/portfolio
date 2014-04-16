@@ -29,9 +29,9 @@
 				<td></td>
 			</tr>
 			<tr>
-				<td>Code Ref</td>
+				<td>codeRef: param</td>
 				<td><input type="text" name="codeRef" /></td>
-				<td></td>
+				<td><input type="text" name="param" /></td>
 			</tr>
 			<tr>
 				<td>AccessPeriod</td>
@@ -40,7 +40,7 @@
 			</tr>
 			<tr>
 				<td></td>
-				<td><input type="submit" value="Upload" /></td>
+				<td><input type="submit" value="Submit" /></td>
 				<td></td>
 			</tr>
 		</table>

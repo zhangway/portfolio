@@ -9,7 +9,12 @@ public class Constraints {
 	private int version;
 	
 	public Constraints(){
-		
+		this.allowDelegation = false;
+	}
+	
+	public Constraints(String accessPeriod){
+		this();
+		this.accessPeriod = accessPeriod;
 	}
 	
 	public String getAccessPeriod() {

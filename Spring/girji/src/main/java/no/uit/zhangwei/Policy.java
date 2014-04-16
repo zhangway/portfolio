@@ -15,6 +15,11 @@ public class Policy {
 		
 	}
 	
+	public Policy(Operation operation, Constraints constraints){
+		this.operation = operation;
+		this.constraints = constraints;
+	}
+	
 
 	public Operation getOperation() {
 		return operation;
