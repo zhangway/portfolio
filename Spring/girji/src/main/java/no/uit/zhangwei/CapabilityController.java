@@ -835,101 +835,139 @@ public class CapabilityController {
 	}
 	
 	@RequestMapping(value = "/test", method = RequestMethod.GET)
-	public String test(ModelMap model, Principal principal) {
-
+	public String test(ModelMap model, Principal principal) throws IOException {
+		/*
+		int m = 0; 
+		
+		for (int k = 0; k < 10; k++){
+		
+		
+		
+		m++;
+		
+		m = m %2;
+		}
+		*/
 		String name = principal.getName(); // get logged in username
 		
-		//execute the same capability file. The data files are different
-		
+	
 		Capability a = null;
 		String jpgName = null;
 		String RCodePath = null;
 		String workingDir = System.getProperty("user.dir");
-		REXPRaw b = null;
-		REXP re = null;
-		File capFile = new File(workingDir+"\\test1.xml");
-		
-		//File file = new File("C:\\file.xml");
-		// String capabilityFullPath = workingDir + "\\" + capName + ".ser";
-		try {
-
-			// File file = new File("C:\\file.xml");
-
-			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
-
-			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-			a = (Capability) jaxbUnmarshaller.unmarshal(new FileInputStream(capFile));
-			// System.out.println(a);
-
-		} catch (JAXBException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		String sig = null;
-		String key = null;
-		for (int i = 0; i < a.getPolicies().size(); i++) {
-			if (i == 0) {
-				sig = "123456";
-			}
-			try {
-				sig = HMACSignature.calculateRFC2104HMAC(a.getPolicies()
-						.get(i).toString(), sig);
-			} catch (InvalidKeyException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (SignatureException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NoSuchAlgorithmException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		if (sig.equals(a.getSignature())) {
-			System.out.println("validated");
-		} else {
-			System.out.println("signature tampered");
-		}
-		ArrayList<Policy> caveats = a.getPolicies();
-		Policy ca = null;
-		String filePath = null;
-		String codeRef = null;
-		ArrayList<String> resultList = null;
-		String filename;
-		DateFormat dateFormat = new SimpleDateFormat("MM/dd HH:mm:ss");
-		Date date = new Date();
-		
-		long uploadTime, downloadTime = 0;
-		// System.out.println(dateFormat.format(cal.getTime()));
+		boolean verify = false;
+		ArrayList<String> files =  new ArrayList<String>();
+		files.add("three.xml");
+		files.add("one.xml");
+		int i = 0;
 		FileWriter writer = null;
+		
+		writer = new FileWriter(workingDir +"\\measurement_policy.csv");
+
+		writer.append("Time");
+		writer.append(',');
+		writer.append("Number of Policy items");
+		writer.append(',');
+		writer.append("Execution Time1");
+		writer.append(',');
+		writer.append("Download Time1");
+		writer.append(',');
+		writer.append("Execution Time2");
+		writer.append(',');
+		writer.append("Download Time2");
+		writer.append(',');
+		writer.append("Execution Time3");
+		writer.append(',');
+		writer.append("Download Time3");
+		writer.append('\n');
+		
+		while(true){			
+			a = generateCap(workingDir+"\\" + files.get(i));
+			verify = verifyCap(a);
+			DateFormat dateFormat = new SimpleDateFormat("MM/dd HH:mm:ss");
+			Date date = new Date();
+			ArrayList<Policy> policies = a.getPolicies();
+			writer.append(dateFormat.format(Calendar.getInstance()
+					.getTime()));
+			writer.append(',');
+			writer.append(Integer.toString(policies.size()));
+			writer.append(',');
+			Policy ca = null;
+			String filePath = null;			
+			String filename;
+			
+			long uploadTime, downloadTime = 0;
+				
+			Policy p = null;
+			
+			String codeRef = null;
+			ArrayList<String> resultList = null;
+			Operation o = null;
+			
+			//execute the capability chain from root item
+			String file = "fitnessActivity.csv";
+			for (int j = 0; j < policies.size(); j++) {
+				p = policies.get(j);
+				o = p.getOperation();
+				codeRef = o.getCodeRef();
+				resultList = this.girjiService.execute(o, file);
+				writer.append(Long.toString(this.girjiService.uploadTime));
+				writer.append(',');
+				try {
+					file = this.girjiService.getFile(file, resultList);
+					writer.append(Long.toString(this.girjiService.downloadTime));
+				} catch (ClientProtocolException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			
+			}
+			writer.append('\n');
+			writer.flush();
+			i++;
+			i = i % 2;
+			
+		}
+
+		
+
+		
+		
+		
+		/*
 
 		try {
-			writer = new FileWriter(workingDir +"\\measurement2.csv");
-
-			writer.append("Time");
-			writer.append(',');
-			writer.append("Number of Points");
-			writer.append(',');
-			writer.append("Number of Policy items");
-			writer.append(',');
-			writer.append("Execution Time1");
-			writer.append(',');
-			writer.append("Download Time1");
-			writer.append(',');
-			writer.append("Execution Time2");
-			writer.append(',');
-			writer.append("Download Time2");
-			writer.append(',');
-			writer.append("Execution Time3");
-			writer.append(',');
-			writer.append("Download Time3");
-			writer.append('\n');
+			
 
 			while (true) {
+				Policy p = null;
+				
+				String codeRef = null;
+				ArrayList<String> resultList = null;
+				Operation o = null;
+				
+				//execute the capability chain from root item
+				String file = "fitnessActivity.csv";
+				for (int j = 0; j < policies.size(); j++) {
+					p = policies.get(j);
+					o = p.getOperation();
+					codeRef = o.getCodeRef();
+					resultList = this.girjiService.execute(o, file);
+					
+					try {
+						file = this.girjiService.getFile(file, resultList);
+					} catch (ClientProtocolException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				
 				for (int k = 1000; k <= 10000; k += 1000) {
 					
 					writer.append(dateFormat.format(Calendar.getInstance()
@@ -939,7 +977,8 @@ public class CapabilityController {
 					writer.append(',');
 					
 					
-					int size = caveats.size();
+					int size = policies.size();
+				
 					// execute the capability chain from root item
 					/*
 					for (int j = 0; j < size; j++) {
@@ -975,7 +1014,7 @@ public class CapabilityController {
 
 						}
 					}
-					*/
+				
 					writer.append('\n');
 					writer.flush();
 					
@@ -993,14 +1032,70 @@ public class CapabilityController {
 			}
 		}
 		
-		
+		*/
 
 			
-		model.addAttribute("filePath", filePath );
+		//model.addAttribute("filePath", "welcome" );
 		
-		return "result";
+		//return "result";
 
 		
 	}
+	
+	private Capability generateCap(String filePath){
+		
+		Capability a = null;
+		
+		try {
 
+			JAXBContext jaxbContext = JAXBContext.newInstance(Capability.class);
+
+			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+			a = (Capability) jaxbUnmarshaller.unmarshal(new FileInputStream(new File(filePath)));
+			// System.out.println(a);
+
+		} catch (JAXBException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return a;
+	}
+	
+	private boolean verifyCap(Capability a){
+		String sig = null;
+		String key = null;
+		boolean result = false;
+		for (int i = 0; i < a.getPolicies().size(); i++) {
+			if (i == 0) {
+				sig = "123456";
+			}
+			try {
+				sig = HMACSignature.calculateRFC2104HMAC(a.getPolicies()
+						.get(i).toString(), sig);
+			} catch (InvalidKeyException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SignatureException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		if (sig.equals(a.getSignature())) {
+			System.out.println("validated");
+			result = true;
+		} else {
+			System.out.println("signature tampered");
+			
+		}
+		return result;
+	}
+	
+	
 }

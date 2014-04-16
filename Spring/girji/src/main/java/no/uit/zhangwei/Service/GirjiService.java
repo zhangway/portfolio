@@ -208,7 +208,7 @@ public class GirjiService {
 		}
 		
 		long t=System.currentTimeMillis()-t1;
-		
+		this.downloadTime = t;
 		System.out.println("get file latency: " + t);
 
 		System.out.println("Response Code : "
@@ -282,7 +282,7 @@ public class GirjiService {
 		HttpResponse response = httpClient.execute(request);
 		
 		long t=System.currentTimeMillis()-t1;
-		
+		this.downloadTime = t;
 		System.out.println("get file latency: " + t);
 
 		System.out.println("Response Code : "
