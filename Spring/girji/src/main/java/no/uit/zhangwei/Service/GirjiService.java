@@ -378,11 +378,19 @@ public class GirjiService {
 
 		entityBuilder.addPart("file", fb);
 		
-		if(o.getParam() != null){
-			if(!o.getParam().equals("")){
-				String param = "'" + o.getParam() + "'";
-				entityBuilder.addTextBody("param", param);
-				System.out.println("Parameter : " + o.getParam());
+		if(o.getParam1() != null){
+			if(!o.getParam1().equals("")){
+				String param1 = "'" + o.getParam1() + "'";
+				entityBuilder.addTextBody("param1", param1);
+				System.out.println("Parameter : " + o.getParam1());
+			}
+		}
+		
+		if(o.getParam2() != null){
+			if(!o.getParam2().equals("")){
+				String param2 = "'" + o.getParam2() + "'";
+				entityBuilder.addTextBody("param2", param2);
+				System.out.println("Parameter : " + o.getParam2());
 			}
 		}
 		

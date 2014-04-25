@@ -17,17 +17,17 @@ public class ConsentRequest {
 		this.operations = new ArrayList<Operation>();
 	}
 	
-	public void setOperations(String[] codeRef, String[] param){
+	public void setOperations(String[] codeRef, String[] param1, String[] param2){
 		
 		
 		
 		for(int i = 0; i < codeRef.length; i++){
-			if(param != null && param.length>0){
-				Operation o = new Operation(codeRef[i], param[i]);
+			if(param1 != null && param1.length>0){
+				Operation o = new Operation(codeRef[i], param1[i], param2[i]);
 				this.operations.add(o);
 				
 			}else{
-				Operation o = new Operation(codeRef[i], null);
+				Operation o = new Operation(codeRef[i], null, null);
 				this.operations.add(o);
 			}
 			

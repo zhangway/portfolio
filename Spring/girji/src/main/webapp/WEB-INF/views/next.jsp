@@ -21,16 +21,16 @@
 			<tr>
 
 				<th>codeRef</th>
-				<th>parameter</th>
-
+				<th>parameter1</th>
+				<th>parameter2</th>
 			</tr>
 
 			<c:forEach items="${reqView.operations}" var="o">
 				<tr>
 
 					<td>${o.codeRef}</td>
-					<td>${o.param}</td>
-
+					<td>${o.param1}</td>
+					<td>${o.param2}</td>
 				</tr>
 			</c:forEach>
 

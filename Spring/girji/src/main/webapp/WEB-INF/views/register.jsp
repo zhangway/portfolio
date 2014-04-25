@@ -24,10 +24,18 @@
    var cellText = row.insertCell(1);
    var element = document.createElement('input');
    element.type = 'text';
-   element.name = 'param';
-   element.id = 'param';
+   element.name = 'param1';
+   element.id = 'param1';
    
    cellText.appendChild(element);
+   
+   var cellText2 = row.insertCell(2);
+   var element2 = document.createElement('input');
+   element2.type = 'text';
+   element2.name = 'param2';
+   element2.id = 'param2';
+   
+   cellText2.appendChild(element2);
    document.getElementById("psize").value=index;
    }
  </script>
@@ -43,13 +51,15 @@
 			<caption>Operations</caption>
 			<tr>
 				<th>codeRef</th>
-				<th>parameters</th>
+				<th>parameter1</th>
+				<th>parameter2</th>
 				<th></th>
 			</tr>
 
 			<tr>
 				<td><input type="text" name="codeRef" /></td>
-				<td><input type="text" name="param" /></td>
+				<td><input type="text" name="param1" /></td>
+				<td><input type="text" name="param2" /></td>
 				<td><input type="button" value="AddOperation" onclick="addRow();" /></td>
 			</tr>
 			

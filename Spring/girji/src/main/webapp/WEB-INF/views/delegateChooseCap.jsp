@@ -31,7 +31,8 @@
 			<tr>
 				<td>codeRef: param</td>
 				<td><input type="text" name="codeRef" /></td>
-				<td><input type="text" name="param" /></td>
+				<td><input type="text" name="param1" /></td>
+				<td><input type="text" name="param2" /></td>
 			</tr>
 			<tr>
 				<td>AccessPeriod</td>

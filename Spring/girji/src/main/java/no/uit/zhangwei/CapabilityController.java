@@ -117,12 +117,12 @@ public class CapabilityController {
 	
 	@RequestMapping("/registerForm")
 	public String registerForm(@RequestParam("name") String name, @RequestParam("description") String description, 
-			@RequestParam("codeRef") String[] codeRef, @RequestParam("param") String[] param, ModelMap model,Principal principal) {
+			@RequestParam("codeRef") String[] codeRef, @RequestParam("param1") String[] param1, @RequestParam("param2") String[] param2, ModelMap model,Principal principal) {
 	    
 		// Processing
 		String provider = principal.getName(); // get logged in username
 		ConsentRequest cro = new ConsentRequest(provider, name, description);
-		cro.setOperations(codeRef, param);
+		cro.setOperations(codeRef, param1, param2);
 		this.girjiService.addCRO(cro);
 		
 		model.addAttribute("reqView", this.girjiService.getCROList());
@@ -624,7 +624,8 @@ public class CapabilityController {
 			@RequestParam("description") String description,
 			@RequestParam("name") String capName,
 			@RequestParam("codeRef") String codeRef,
-			@RequestParam("param") String param,
+			@RequestParam("param1") String param1,
+			@RequestParam("param2") String param2,
 			@RequestParam("accessPeriod") String accessPeriod,ModelMap model,
 			BindingResult result, Principal principal) {
 		InputStream inputStream = null;
@@ -695,7 +696,7 @@ public class CapabilityController {
 		delegatedCap.setName(capName);
 		delegatedCap.setDescription(description);
 		
-		Operation o = new Operation(codeRef, param);
+		Operation o = new Operation(codeRef, param1, param2);
 		Constraints c = new Constraints(accessPeriod);
 		
 		Policy p = new Policy(o, c);
@@ -836,18 +837,7 @@ public class CapabilityController {
 	
 	@RequestMapping(value = "/test", method = RequestMethod.GET)
 	public String test(ModelMap model, Principal principal) throws IOException {
-		/*
-		int m = 0; 
-		
-		for (int k = 0; k < 10; k++){
-		
-		
-		
-		m++;
-		
-		m = m %2;
-		}
-		*/
+
 		String name = principal.getName(); // get logged in username
 		
 	
@@ -857,16 +847,18 @@ public class CapabilityController {
 		String workingDir = System.getProperty("user.dir");
 		boolean verify = false;
 		ArrayList<String> files =  new ArrayList<String>();
-		files.add("three.xml");
+		files.add("two.xml");
 		files.add("one.xml");
 		int i = 0;
 		FileWriter writer = null;
 		
-		writer = new FileWriter(workingDir +"\\measurement_policy.csv");
+		writer = new FileWriter(workingDir +"\\measurement_policy_two_point.csv");
 
 		writer.append("Time");
 		writer.append(',');
 		writer.append("Number of Policy items");
+		writer.append(',');
+		writer.append("Number of Points");
 		writer.append(',');
 		writer.append("Execution Time1");
 		writer.append(',');
@@ -887,46 +879,53 @@ public class CapabilityController {
 			DateFormat dateFormat = new SimpleDateFormat("MM/dd HH:mm:ss");
 			Date date = new Date();
 			ArrayList<Policy> policies = a.getPolicies();
-			writer.append(dateFormat.format(Calendar.getInstance()
-					.getTime()));
-			writer.append(',');
-			writer.append(Integer.toString(policies.size()));
-			writer.append(',');
-			Policy ca = null;
-			String filePath = null;			
-			String filename;
-			
-			long uploadTime, downloadTime = 0;
-				
-			Policy p = null;
-			
-			String codeRef = null;
-			ArrayList<String> resultList = null;
-			Operation o = null;
-			
-			//execute the capability chain from root item
-			String file = "fitnessActivity.csv";
-			for (int j = 0; j < policies.size(); j++) {
-				p = policies.get(j);
-				o = p.getOperation();
-				codeRef = o.getCodeRef();
-				resultList = this.girjiService.execute(o, file);
-				writer.append(Long.toString(this.girjiService.uploadTime));
+			for(int q = 1000; q <= 10000; q+=1000){
+				writer.append(dateFormat.format(Calendar.getInstance()
+						.getTime()));
 				writer.append(',');
-				try {
-					file = this.girjiService.getFile(file, resultList);
-					writer.append(Long.toString(this.girjiService.downloadTime));
-				} catch (ClientProtocolException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				writer.append(Integer.toString(policies.size()));
+				writer.append(',');
+				Policy ca = null;
+				String filePath = null;			
+				String filename;
+				
+				long uploadTime, downloadTime = 0;
+					
+				Policy p = null;
+				
+				String codeRef = null;
+				ArrayList<String> resultList = null;
+				Operation o = null;
 			
+				
+				writer.append(Integer.toString(q));
+				writer.append(',');
+				
+				//execute the capability chain from root item
+				String file = "fitnessActivity" + "_" + q + ".csv";;
+				for (int j = 0; j < policies.size(); j++) {
+					p = policies.get(j);
+					o = p.getOperation();
+					codeRef = o.getCodeRef();
+					resultList = this.girjiService.execute(o, file);
+					writer.append(Long.toString(this.girjiService.uploadTime));
+					writer.append(',');
+					try {
+						file = this.girjiService.getFile(file, resultList);
+						writer.append(Long.toString(this.girjiService.downloadTime));
+						writer.append(',');
+					} catch (ClientProtocolException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				
+				}
+				writer.append('\n');
+				writer.flush();
 			}
-			writer.append('\n');
-			writer.flush();
 			i++;
 			i = i % 2;
 			
