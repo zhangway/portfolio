@@ -213,7 +213,7 @@ public class CapabilityController {
 			jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
 			jaxbMarshaller.marshal(cap, file2);
-			jaxbMarshaller.marshal(cap, System.out);
+			//jaxbMarshaller.marshal(cap, System.out);
 
 		} catch (JAXBException ex) {
 			ex.printStackTrace();
@@ -835,6 +835,186 @@ public class CapabilityController {
 		
 	}
 	
+	@RequestMapping(value = "/dumbtest", method = RequestMethod.GET)
+	public String dumbtest(ModelMap model, Principal principal) throws ClientProtocolException, IOException {
+		
+		String workingDir = System.getProperty("user.dir");
+		//generate capabilities from one to a thousand (cap_1.xml)
+		CodeConsent cc = new CodeConsent();
+		
+		
+		/*
+		for(int i=1; i <= 1000; i++){
+			ArrayList<Operation> ol = new ArrayList<Operation>();
+			cc.setName("cap_" + String.valueOf(i));
+			cc.setDescription(String.valueOf(i));
+			cc.setDataOwnerId(principal.getName());
+			cc.setPrincipalId(principal.getName());	
+			cc.setRevoked(false);
+			for(int j=1; j <= i; j++){
+				Operation o = new Operation("/ocpu/library/girji/R/dumb", null, null);
+				ol.add(o);
+			}
+			cc.setOperations(ol);
+			
+			
+			//a capability is derived from the code consent object		
+			Capability cap = new Capability(cc);
+			
+			//generate the xml file		
+			generateXML(cap);
+			
+		}
+		*/
+		//create a csv for measurement
+		FileWriter writer = null;
+		Policy p = null;
+		boolean verify = false;
+		String codeRef = null;
+		ArrayList<String> resultList = null;
+		Operation o = null;
+		Capability a = null;
+		try {
+			writer = new FileWriter(workingDir +"\\measurement_dumb.csv");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		try {
+			writer.append("Time");
+			writer.append(',');
+			writer.append("Number of Policy items");
+			writer.append(',');
+			writer.append("Cap Verification");
+			writer.append(',');
+			writer.append("Execution");
+			writer.append(',');
+			writer.append("Download");
+			writer.append('\n');
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		long executionTime=0;
+		long downloadTime = 0;
+		
+		
+		while(true){
+			for(int m = 500; m <= 500; m++){
+				
+				DateFormat dateFormat = new SimpleDateFormat("MM/dd HH:mm:ss");
+				Date date = new Date();
+				try {
+					writer.append(dateFormat.format(Calendar.getInstance()
+							.getTime()));
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				try {
+					writer.append(',');
+					writer.append(String.valueOf(m));
+					writer.append(',');
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+				a = generateCap(workingDir+"\\" + "cap_" + String.valueOf(m) + ".xml");
+				long startTime = System.currentTimeMillis();
+				verify = verifyCap(a);
+				if(verify == true){
+					long verifytime = System.currentTimeMillis() - startTime;
+					try {
+						writer.append(Long.toString(verifytime));
+						writer.append(',');
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}else{
+					try {
+						writer.append(Long.toString(-1));
+						writer.append(',');
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+				
+				ArrayList<Policy> policies = a.getPolicies();
+				int size = policies.size();
+				System.out.println("verify OK. Item No.  " + size);
+				for (int j = 0; j < size; j++) {
+					p = policies.get(j);
+					o = p.getOperation();
+					codeRef = o.getCodeRef();
+					resultList = this.girjiService.execute(o);
+					executionTime += this.girjiService.uploadTime;
+					/*
+					try {
+						writer.append(Long.toString(this.girjiService.uploadTime));
+						writer.append(',');
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					*/
+					try {
+						String result = this.girjiService.getResult(resultList);
+						downloadTime +=this.girjiService.downloadTime;
+						/*
+						writer.append(Long.toString(this.girjiService.downloadTime));
+						System.out.println("Result of cap_" + String.valueOf(m) + " :" + result);
+						writer.append(',');
+						*/
+					} catch (ClientProtocolException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				
+				}
+				try {
+					writer.append(Long.toString(executionTime));
+					writer.append(',');
+					writer.append(Long.toString(downloadTime));
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				System.out.println(executionTime + ":" + downloadTime);
+				executionTime = 0;
+				downloadTime = 0;
+				try {
+					writer.append('\n');
+					writer.flush();
+					
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				/*
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				*/
+				
+				
+				
+			}
+		}
+		//
+		
+		
+	}
+	
 	@RequestMapping(value = "/test", method = RequestMethod.GET)
 	public String test(ModelMap model, Principal principal) throws IOException {
 
@@ -1087,7 +1267,7 @@ public class CapabilityController {
 		}
 
 		if (sig.equals(a.getSignature())) {
-			System.out.println("validated");
+			//System.out.println("validated");
 			result = true;
 		} else {
 			System.out.println("signature tampered");

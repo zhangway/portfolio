@@ -9,8 +9,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import no.uit.zhangwei.Capability;
 import no.uit.zhangwei.CodeConsent;
@@ -20,14 +22,22 @@ import no.uit.zhangwei.User;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.params.ConnManagerParams;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 public class GirjiService {
@@ -39,12 +49,21 @@ public class GirjiService {
 	private HashMap<String, User> userMap;
 	public long uploadTime;
 	public long downloadTime;
+	PoolingHttpClientConnectionManager cManager;
+	CloseableHttpClient httpClient;
+	
 	
 	public GirjiService(){
 		this.capabilities = new ArrayList<Capability>();
 		this.croList = new ArrayList<ConsentRequest>();
 		this.userMap = new HashMap<String, User>();
 		this.ccoList = new ArrayList<CodeConsent>();
+		this.cManager = new PoolingHttpClientConnectionManager();
+		
+		this.cManager.setMaxTotal(5000);
+		this.httpClient = HttpClients.custom()
+		    .setConnectionManager(this.cManager)
+		    .build();
 	}
 	
 	public User findUser(String name){
@@ -299,6 +318,53 @@ public class GirjiService {
 		return fileName;
 	}
 	
+	public String getResult(ArrayList<String> resultList) throws ClientProtocolException, IOException {
+		
+		//HttpClient httpClient = HttpClientBuilder.create().build();
+		String url = OPENCPU_SERVER + resultList.get(0);
+
+		HttpGet request = new HttpGet(url);
+
+		// add request header
+		request.addHeader("User-Agent", "girji");
+		
+		long t1=System.currentTimeMillis();                     
+        
+         
+		CloseableHttpResponse response = this.httpClient.execute(request);
+		
+		long t=System.currentTimeMillis()-t1;
+		this.downloadTime = t;
+		//System.out.println("get result latency: " + t);
+		int code = response.getStatusLine().getStatusCode();
+		if(code != 200){
+			System.out.println("Get Not OK." + code);
+			System.exit(0);
+		}
+		//System.out.println("Response Code : " + response.getStatusLine().getStatusCode());
+		HttpEntity entity = null;
+		entity = response.getEntity();
+		//EntityUtils.consume(entity); 
+		BufferedReader rd = new BufferedReader(
+				new InputStreamReader(entity.getContent()));			
+		
+		 
+			StringBuffer resultBuf = new StringBuffer();
+			String line = "";
+			while ((line = rd.readLine()) != null) {
+				resultBuf.append(line);
+			}
+			try {
+				rd.close();
+				response.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		return resultBuf.toString();
+	}
+	
 	public ArrayList<String> execute(String filePath, String name, String codeRef){
 		String user = "'" + name + "'";
 		HttpClient client = HttpClientBuilder.create().build();
@@ -445,6 +511,87 @@ public class GirjiService {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return resultList;
+	}
+	
+
+	public ArrayList<String> execute(Operation o) throws IOException, ClientProtocolException  {
+		//HttpClient client = HttpClientBuilder.create().build();
+		
+		String url = OPENCPU_SERVER + o.getCodeRef();
+		HttpPost post = new HttpPost(url);
+		
+		List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+
+		try {
+			post.setEntity(new UrlEncodedFormEntity(urlParameters));
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+					
+		//System.out.println("URL : " + url);
+		
+		CloseableHttpResponse response = null;
+		long startTime = 0;
+		long endTime;
+		try {
+			startTime = System.currentTimeMillis();
+			response = this.httpClient.execute(post);
+			endTime = System.currentTimeMillis();
+			//System.out.println(" :: upload latency :: " + (endTime - startTime));
+			this.uploadTime = endTime - startTime;
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		int responseCode = response.getStatusLine().getStatusCode();
+		if(responseCode != 201){
+			System.out.println("Get Not OK." + responseCode);
+			System.exit(0);
+		}
+		// System.out.println("Response Code : " + responseCode);
+		HttpEntity entity = response.getEntity();
+		
+	    
+		BufferedReader rd = null;
+		try {
+			rd = new BufferedReader(new InputStreamReader(entity.getContent()));
+			
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		
+		
+		String body = "";
+		String content = "";
+		ArrayList<String> resultList = new ArrayList<String>();
+		try {
+			while ((body = rd.readLine()) != null) {
+				resultList.add(body);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally{
+			try {
+				rd.close();
+				response.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		
 		return resultList;
 	}
 	
