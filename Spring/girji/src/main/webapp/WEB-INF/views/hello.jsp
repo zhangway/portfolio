@@ -17,7 +17,9 @@
 	<a href="<c:url value="/test"/>">test</a>
 	</p>
 	
-	
+	<p>
+	<a href="<c:url value="/dumbtest"/>">Dumb Test</a>
+	</p>
 	
 	<p>
 	<a href="<c:url value="/register"/>">Register a service</a>

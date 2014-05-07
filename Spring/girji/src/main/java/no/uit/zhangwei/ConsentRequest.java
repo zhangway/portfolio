@@ -23,8 +23,13 @@ public class ConsentRequest {
 		
 		for(int i = 0; i < codeRef.length; i++){
 			if(param1 != null && param1.length>0){
-				Operation o = new Operation(codeRef[i], param1[i], param2[i]);
-				this.operations.add(o);
+				if(param2 !=null && param2.length>0){
+					Operation o = new Operation(codeRef[i], param1[i], param2[i]);
+					this.operations.add(o);
+				}else{
+					Operation o = new Operation(codeRef[i], param1[i],null);
+					this.operations.add(o);
+				}
 				
 			}else{
 				Operation o = new Operation(codeRef[i], null, null);
