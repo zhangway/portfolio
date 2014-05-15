@@ -833,7 +833,7 @@ public class CapabilityController {
 		Operation o = null;
 		Capability a = null;
 		try {
-			writer = new FileWriter(workingDir + "\\measurement_dumb.csv");
+			writer = new FileWriter(workingDir + "\\measurement_time_per_item.csv");
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -861,7 +861,7 @@ public class CapabilityController {
 		
 		long verifytime = 0, sumVerifyTime = 0, sumDownloadTime = 0, sumExecutionTime = 0;
 		
-		for (int repetition = 0; repetition < 100; repetition++) {
+		//for (int repetition = 0; repetition < 100; repetition++) {
 
 			for (int items = 1; items <= 200; items += 1) {
 
@@ -953,9 +953,9 @@ public class CapabilityController {
 				
 
 			}
-		}
+		//}
 		
-		return "hello";
+		return "home";
 
 	}
 
